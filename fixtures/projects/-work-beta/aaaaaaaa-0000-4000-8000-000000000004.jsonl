@@ -1,0 +1,5 @@
+{"type":"user","isSidechain":false,"gitBranch":"main","sessionId":"aaaaaaaa-0000-4000-8000-000000000001","message":{"role":"user","content":"Main invented request."}}
+{"type":"assistant","isSidechain":false,"gitBranch":"main","message":{"role":"assistant","model":"claude-invented-main","content":[{"type":"text","text":"Main invented answer."}],"stop_reason":"end_turn"}}
+{"type":"assistant","isSidechain":true,"gitBranch":"side-branch","message":{"role":"assistant","model":"claude-invented-side","content":[{"type":"text","text":"Sidechain invented answer."}],"stop_reason":"end_turn"}}
+{"type":"assistant","isSidechain":true,"gitBranch":"side-branch","message":{"role":"assistant","model":"claude-invented-side","content":[{"type":"tool_use","id":"toolu_side1","name":"Grep","input":{"pattern":"x"}}],"stop_reason":"tool_use"}}
+{"type":"last-prompt","lastPrompt":"Sidechain invented prompt","isSidechain":true}

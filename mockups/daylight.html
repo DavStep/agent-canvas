@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent canvas · Daylight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#f5f3ee;
+  --paper:#fffefb;
+  --sunk:#fbfaf6;
+  --line:#e3dfd5;
+  --line-soft:#ebe7de;
+  --ink:#1f1d1a;
+  --ink-2:#6b665d;
+  --ink-3:#9a948a;
+  --accent:#d9482b;
+  --accent-ink:#b23a22;
+  --sage:#e9eee4;
+  --sand:#f1ead9;
+  --mist:#e6ecef;
+  --blush:#f2e6e1;
+
+  --serif:"Newsreader","Iowan Old Style","Charter",Georgia,serif;
+  --sans:"Inter Tight","Helvetica Neue",Helvetica,Arial,sans-serif;
+
+  --panel:clamp(344px,25vw,372px);
+  --lift:0 10px 28px -14px rgba(31,29,26,.28);
+}
+*{box-sizing:border-box}
+html,body{height:100%;overflow:hidden;margin:0}
+body{
+  background:var(--canvas);
+  color:var(--ink);
+  font:400 13px/18px var(--sans);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) var(--panel);
+  grid-template-rows:48px 40px minmax(0,1fr);
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit}
+.num,.t{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- Top bar ---------- */
+.top{
+  grid-column:1/-1;
+  background:var(--paper);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;
+}
+.brand{display:flex;align-items:baseline;gap:20px;min-width:0}
+.brand .name{
+  font-family:var(--serif);font-size:24px;line-height:28px;font-weight:400;
+  letter-spacing:-.015em;white-space:nowrap;
+}
+.counts{color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.counts i{font-style:normal;color:var(--ink-3);margin:0 6px}
+.counts em{font-style:normal;color:var(--accent-ink)}
+.ctrls{display:flex;align-items:center;gap:20px}
+.ctrls button{color:var(--ink-2);line-height:28px;transition:color .15s}
+.ctrls button:hover{color:var(--ink)}
+.ctrls button[aria-pressed="true"]{color:var(--ink)}
+.ctrls .rule{width:1px;height:14px;background:var(--line)}
+
+/* ---------- Needs-you strip ---------- */
+.strip{
+  grid-column:1/-1;
+  background:var(--paper);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;
+  padding:0 24px;
+  white-space:nowrap;
+  min-width:0;overflow:hidden;
+}
+.nlabel{
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;line-height:16px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--accent-ink);
+  padding-right:20px;
+}
+.nlabel .n{font-variant-numeric:tabular-nums;letter-spacing:0}
+.dia{
+  width:7px;height:7px;background:var(--accent);transform:rotate(45deg);
+  flex:none;display:inline-block;
+}
+.ni{
+  display:flex;align-items:baseline;gap:10px;text-decoration:none;min-width:0;
+}
+.ni b{
+  font-weight:500;color:var(--ink);
+  text-decoration:underline;text-decoration-color:var(--line);
+  text-decoration-thickness:1px;text-underline-offset:4px;
+  transition:text-decoration-color .15s;
+}
+.ni:hover b{text-decoration-color:var(--ink)}
+.ni span{color:var(--ink-2);overflow:hidden;text-overflow:ellipsis}
+.ni .t{color:var(--ink-2)}
+.ni i{font-style:normal;color:var(--ink-3);margin:0 -4px}
+.strip .sep{width:1px;height:16px;background:var(--line);margin:0 20px;flex:none}
+
+/* ---------- Canvas ---------- */
+.canvas{
+  grid-row:3;grid-column:1;
+  position:relative;overflow:hidden;
+  background-color:var(--canvas);
+  background-image:radial-gradient(circle at 1px 1px, rgba(31,29,26,.085) 1px, transparent 1.4px);
+  background-size:20px 20px;
+  background-position:7px 11px;
+}
+.board{
+  --m:32px; --p:14px; --g:12px; --G:24px;
+  --c:min(268px, calc((100vw - var(--panel) - 2*var(--m) - 2*var(--g) - 4*var(--p) - var(--G)) / 4));
+  display:grid;
+  grid-template-columns:
+    calc(3*var(--c) + 2*var(--g) + 2*var(--p))
+    calc(var(--c) + 2*var(--p));
+  grid-template-rows:auto auto auto;
+  column-gap:var(--G);
+  width:max-content;
+  margin:44px auto 0;
+  padding:0 var(--m);
+}
+
+/* Zones */
+.zone{
+  border-radius:12px;
+  padding:0 var(--p) var(--p);
+  display:flex;flex-direction:column;
+}
+.zh{
+  display:flex;align-items:baseline;justify-content:space-between;
+  padding:14px 0 12px;
+}
+.zh h2{
+  margin:0;font-family:var(--serif);font-weight:400;
+  font-size:24px;line-height:28px;letter-spacing:-.015em;
+}
+.zh .ct{color:var(--ink-2);font-variant-numeric:tabular-nums}
+.z-sage{background:var(--sage)}
+.z-sand{background:var(--sand)}
+.z-mist{background:var(--mist)}
+.z-blush{background:var(--blush)}
+
+.z-garden{grid-column:1;grid-row:1 / span 2}
+.z-nofolder{grid-column:2;grid-row:1;align-self:start}
+.z-broad{grid-column:2;grid-row:2;align-self:end;margin-top:24px}
+.z-dash{
+  grid-column:1 / -1;grid-row:3;justify-self:end;
+  width:calc(4*var(--c) + 3*var(--g) + 2*var(--p));
+  margin-top:32px;
+}
+
+.cards{display:grid;gap:var(--g)}
+.z-garden .cards{grid-template-columns:repeat(3,minmax(0,1fr));align-content:start}
+.z-dash .cards{grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));align-items:start}
+
+/* ---------- Cards ---------- */
+.card{
+  position:relative;
+  display:flex;flex-direction:column;
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:13px 14px 13px 31px;
+  cursor:pointer;
+  transition:box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.card:hover,.card:focus-visible{box-shadow:var(--lift);border-color:#d9d4c8;outline:none}
+.card h3{
+  margin:0;font-size:13px;line-height:18px;font-weight:500;letter-spacing:-.003em;
+  text-wrap:pretty;
+}
+.act{margin:4px 0 0;text-wrap:pretty}
+.card footer{
+  margin-top:auto;padding-top:12px;
+  display:flex;justify-content:space-between;gap:12px;
+  font-size:11px;line-height:16px;letter-spacing:.01em;color:var(--ink-2);
+  font-variant-numeric:tabular-nums;
+}
+.card footer span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* status marks: hang in the left gutter, centred on the title's first line */
+.mk{position:absolute;left:13px;top:18px;width:8px;height:8px}
+
+/* WORKING */
+.mk.work::before,.mk.work::after{
+  content:"";position:absolute;inset:0;border-radius:50%;
+}
+.mk.work::before{background:var(--ink)}
+.mk.work::after{
+  border:1px solid var(--ink);opacity:0;
+  animation:pulse 2.8s cubic-bezier(.22,.61,.36,1) infinite;
+}
+@keyframes pulse{
+  0%{transform:scale(1);opacity:.5}
+  70%,100%{transform:scale(2.5);opacity:0}
+}
+.s-work .act{color:var(--ink)}
+
+/* NEEDS YOU */
+.mk.need{width:8px;height:8px}
+.mk.need::before{
+  content:"";position:absolute;left:.5px;top:.5px;width:7px;height:7px;
+  background:var(--accent);transform:rotate(45deg);
+}
+.s-need{background:color-mix(in srgb, var(--accent) 6%, transparent)}
+.s-need:hover,.s-need:focus-visible{border-color:#d9d4c8;box-shadow:var(--lift)}
+.s-need .act{color:var(--accent-ink)}
+.kick{
+  font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  margin-right:6px;
+}
+
+/* IDLE */
+.mk.idle::before{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  border:1.25px solid var(--ink-2);
+}
+.s-idle{background:var(--sunk)}
+.s-idle h3{color:var(--ink-2)}
+.s-idle .act{color:var(--ink-2)}
+.s-idle:hover{background:var(--paper)}
+
+/* SELECTED */
+.card.sel{
+  outline:1.5px solid var(--ink);outline-offset:-1px;
+  box-shadow:var(--lift);
+}
+
+/* Subagents */
+.subs{
+  position:relative;
+  margin-top:12px;padding-top:8px;
+  border-top:1px solid var(--line-soft);
+}
+.subs::before{ /* indent line, hanging under the parent's mark */
+  content:"";position:absolute;left:-14px;top:9px;
+  height:calc(100% - 9px - 11px);width:1px;background:var(--line);
+}
+.sub{
+  position:relative;
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  line-height:22px;
+}
+.sub::before{
+  content:"";position:absolute;left:-14px;top:11px;width:8px;height:1px;background:var(--line);
+}
+.sub .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub .st{
+  display:inline-flex;align-items:center;gap:5px;flex:none;
+  font-size:11px;letter-spacing:.01em;color:var(--ink-2);
+}
+.sub .st .d{width:5px;height:5px;border-radius:50%;background:var(--ink)}
+.sub .st svg{display:block}
+.sub.done .nm{color:var(--ink-2)}
+.sub.on .st{color:var(--ink)}
+
+/* ---------- Side panel ---------- */
+.panel{
+  grid-row:3;grid-column:2;
+  background:var(--paper);
+  border-left:1px solid var(--line);
+  padding:28px 28px 28px;
+  display:flex;flex-direction:column;
+  min-height:0;overflow:hidden;
+}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.pt{
+  margin:0;font-family:var(--serif);font-weight:400;
+  font-size:24px;line-height:30px;letter-spacing:-.015em;
+  text-wrap:balance;
+}
+.x{
+  flex:none;width:28px;height:28px;margin:1px -8px 0 0;border-radius:6px;
+  display:grid;place-items:center;color:var(--ink-2);transition:background-color .15s,color .15s;
+}
+.x:hover{background:var(--canvas);color:var(--ink)}
+
+.meta{margin:24px 0 0;display:grid;row-gap:8px}
+.meta div{display:grid;grid-template-columns:84px 1fr;align-items:baseline}
+.meta dt,.lbl{
+  font-size:11px;line-height:16px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-2);
+}
+.meta dd{margin:0;line-height:20px;font-variant-numeric:tabular-nums}
+.meta .state{display:inline-flex;align-items:center;gap:10px}
+.meta .state .mk{position:relative;left:auto;top:auto}
+
+.sec{margin-top:32px}
+.lbl{margin:0 0 10px}
+.said{
+  margin:0;padding:10px 14px;border-radius:8px;
+  background:color-mix(in srgb, var(--ink) 5%, transparent);
+  font-size:15px;line-height:23px;
+}
+.answer p{margin:0;font-size:15px;line-height:1.55;text-wrap:pretty}
+.answer p + p{margin-top:12px}
+
+.actions{margin-top:auto;padding-top:24px;display:flex;align-items:center;gap:16px;white-space:nowrap}
+.btn{
+  height:40px;padding:0 16px;border-radius:8px;
+  background:var(--ink);color:var(--paper);font-weight:500;
+  transition:background-color .15s;
+}
+.btn:hover{background:#3a3631}
+.tbtn{
+  color:var(--ink);font-weight:500;line-height:40px;
+  text-decoration:underline;text-decoration-color:transparent;text-underline-offset:4px;
+  transition:text-decoration-color .15s;
+}
+.tbtn:hover{text-decoration-color:var(--ink)}
+.btn:focus-visible,.tbtn:focus-visible,.ctrls button:focus-visible,.x:focus-visible,.ni:focus-visible{
+  outline:1.5px solid var(--ink);outline-offset:2px;border-radius:6px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .mk.work::after{animation:none;transform:scale(1.75);opacity:.3}
+  .card,.btn,.tbtn,.ni b,.x,.ctrls button{transition:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="name">Agent canvas</span>
+    <span class="counts">11 sessions<i>·</i>3 working<i>·</i><em>2 need you</em></span>
+  </div>
+  <nav class="ctrls" aria-label="Canvas controls">
+    <button aria-pressed="true">Zones</button>
+    <button>Fit</button>
+    <span class="rule" aria-hidden="true"></span>
+    <button class="num">100%</button>
+  </nav>
+</header>
+
+<div class="strip" role="region" aria-label="Needs you">
+  <span class="nlabel"><i class="dia" aria-hidden="true"></i>Needs you <span class="n">2</span></span>
+  <a class="ni" href="#hostly"><b>Enable account deletion approvals on Hostly</b><span>asks permission to run a command</span><i aria-hidden="true">·</i><span class="t">2m</span></a>
+  <span class="sep" aria-hidden="true"></span>
+  <a class="ni" href="#purchases"><b>Purchases unavailable in production</b><span>finished, waiting for your reply</span><i aria-hidden="true">·</i><span class="t">14m</span></a>
+</div>
+
+<main class="canvas" aria-label="Canvas">
+  <div class="board">
+
+    <!-- garden-sim -->
+    <section class="zone z-sage z-garden" aria-label="garden-sim">
+      <header class="zh"><h2>garden-sim</h2><span class="ct">5 sessions</span></header>
+      <div class="cards">
+        <article class="card s-work" tabindex="0">
+          <i class="mk work" aria-hidden="true"></i>
+          <h3><span class="sr">Working: </span>Reconnection dialog and animation issues</h3>
+          <p class="act">Editing ReconnectDialog.tsx</p>
+          <footer><span>fix/reconnect</span><span class="t">6m in this turn</span></footer>
+        </article>
+        <article class="card s-need" tabindex="0" id="hostly">
+          <i class="mk need" aria-hidden="true"></i>
+          <h3><span class="sr">Needs you: </span>Enable account deletion approvals on Hostly</h3>
+          <p class="act"><span class="kick">Permission</span>Wants to run: ssh hostly systemctl restart api</p>
+          <footer><span>main</span><span class="t">2m</span></footer>
+        </article>
+        <article class="card s-need" tabindex="0" id="purchases">
+          <i class="mk need" aria-hidden="true"></i>
+          <h3><span class="sr">Needs you: </span>Purchases unavailable in production</h3>
+          <p class="act"><span class="kick">Reply</span>Found it: product IDs differ between sandbox and production</p>
+          <footer><span>main</span><span class="t">14m</span></footer>
+        </article>
+        <article class="card s-idle" tabindex="0">
+          <i class="mk idle" aria-hidden="true"></i>
+          <h3><span class="sr">Idle: </span>Preview improvement suggestions</h3>
+          <p class="act">Last active 3h ago</p>
+          <footer><span>main</span></footer>
+        </article>
+        <article class="card s-idle" tabindex="0">
+          <i class="mk idle" aria-hidden="true"></i>
+          <h3><span class="sr">Idle: </span>Codex usage credits analysis</h3>
+          <p class="act">Last active yesterday</p>
+          <footer><span>main</span></footer>
+        </article>
+      </div>
+    </section>
+
+    <!-- No folder -->
+    <section class="zone z-blush z-nofolder" aria-label="No folder">
+      <header class="zh"><h2>No folder</h2><span class="ct">1 session</span></header>
+      <div class="cards">
+        <article class="card s-work sel" tabindex="0" aria-current="true">
+          <i class="mk work" aria-hidden="true"></i>
+          <h3><span class="sr">Working, selected: </span>System discussion with friend notes</h3>
+          <p class="act">Laying out visual directions</p>
+          <footer><span></span><span class="t">1m in this turn</span></footer>
+        </article>
+      </div>
+    </section>
+
+    <!-- sailcloth-io -->
+    <section class="zone z-mist z-broad" aria-label="sailcloth-io">
+      <header class="zh"><h2>sailcloth-io</h2><span class="ct">1 session</span></header>
+      <div class="cards">
+        <article class="card s-idle" tabindex="0">
+          <i class="mk idle" aria-hidden="true"></i>
+          <h3><span class="sr">Idle: </span>Deploy changes</h3>
+          <p class="act">Last active 40m ago</p>
+          <footer><span>main</span></footer>
+        </article>
+      </div>
+    </section>
+
+    <!-- garden-dashboard -->
+    <section class="zone z-sand z-dash" aria-label="garden-dashboard">
+      <header class="zh"><h2>garden-dashboard</h2><span class="ct">4 sessions</span></header>
+      <div class="cards">
+        <article class="card s-work" tabindex="0">
+          <i class="mk work" aria-hidden="true"></i>
+          <h3><span class="sr">Working: </span>Database visualization dashboard</h3>
+          <p class="act">Running tests</p>
+          <div class="subs" aria-label="Subagents">
+            <div class="sub on"><span class="nm">schema-explorer</span><span class="st"><i class="d" aria-hidden="true"></i>working</span></div>
+            <div class="sub done"><span class="nm">chart-builder</span><span class="st"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.8 5.3 4 7.4 8.3 2.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>done</span></div>
+          </div>
+          <footer><span>feat/db-viz</span><span class="t">11m in this turn</span></footer>
+        </article>
+        <article class="card s-idle" tabindex="0">
+          <i class="mk idle" aria-hidden="true"></i>
+          <h3><span class="sr">Idle: </span>Dashboard as MCP</h3>
+          <p class="act">Last active 1h ago</p>
+          <footer><span>main</span></footer>
+        </article>
+        <article class="card s-idle" tabindex="0">
+          <i class="mk idle" aria-hidden="true"></i>
+          <h3><span class="sr">Idle: </span>Agent setup 3D graph visualization</h3>
+          <p class="act">Last active 5h ago</p>
+          <footer><span>main</span></footer>
+        </article>
+        <article class="card s-idle" tabindex="0">
+          <i class="mk idle" aria-hidden="true"></i>
+          <h3><span class="sr">Idle: </span>trying to analyze the progression shown</h3>
+          <p class="act">Last active 2d ago</p>
+          <footer><span>main</span></footer>
+        </article>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<aside class="panel" aria-label="Selected session">
+  <div class="ph">
+    <h2 class="pt">System discussion with friend notes</h2>
+    <button class="x" aria-label="Close panel"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+  </div>
+
+  <dl class="meta">
+    <div><dt>Folder</dt><dd>No folder</dd></div>
+    <div><dt>Model</dt><dd>Fable 5.2</dd></div>
+    <div><dt>Started</dt><dd>17:42</dd></div>
+    <div><dt>State</dt><dd><span class="state"><i class="mk work" aria-hidden="true"></i>Working, 1m</span></dd></div>
+  </dl>
+
+  <section class="sec">
+    <h3 class="lbl">You last said</h3>
+    <p class="said">Standalone canvas</p>
+  </section>
+
+  <section class="sec">
+    <h3 class="lbl">Its last answer</h3>
+    <div class="answer">
+      <p>The check is back, and it narrows the choice to two real options.</p>
+      <p>I recommend the standalone canvas because all 11 of your live sessions are desktop-app sessions; the other route makes you change how you work before you get any value.</p>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn">Open in Claude</button>
+    <button class="tbtn">Copy resume command</button>
+  </div>
+</aside>
+
+</body>
+</html>

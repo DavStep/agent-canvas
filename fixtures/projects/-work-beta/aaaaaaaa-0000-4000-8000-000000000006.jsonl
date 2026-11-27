@@ -1,0 +1,4 @@
+{"type":"user","isSidechain":false,"gitBranch":"main","message":{"role":"user","content":"Check two invented things at once."}}
+{"type":"assistant","isSidechain":false,"gitBranch":"main","message":{"id":"msg_par1","role":"assistant","model":"claude-invented-1","content":[{"type":"tool_use","id":"toolu_par_a","name":"Bash","input":{"command":"sleep 60"}}]}}
+{"type":"assistant","isSidechain":false,"gitBranch":"main","message":{"id":"msg_par1","role":"assistant","model":"claude-invented-1","content":[{"type":"tool_use","id":"toolu_par_b","name":"Read","input":{"file_path":"/work/beta/a.txt"}}]}}
+{"type":"user","isSidechain":false,"gitBranch":"main","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_par_b","content":"invented result"}]}}

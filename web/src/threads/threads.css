@@ -1,0 +1,33 @@
+.thread-note { gap: 6px; padding: 13px 15px 12px; overflow-wrap: anywhere; }
+.thread-note.is-dragged { opacity: .55; cursor: grabbing; }
+.thread-note :is(p, h3) { margin: 0; }
+.tn-kicker, .tn-meta { color: var(--note-muted); font: 400 11px/15px var(--font-mono); }
+.tn-kicker { font: 500 11px/15px var(--font-sans); }
+[data-note-appearance="paper"] .tn-kicker { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .075em; }
+.tn-title { font: var(--note-title); }
+.tn-meta { display: flex; align-items: baseline; gap: 8px; }
+.tn-project { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tn-age { flex: none; }
+.tn-summary, .tn-question { font: 400 12px/17px var(--font-sans); }
+.tn-summary { white-space: pre-line; }
+.tn-q-label { font-weight: 600; }
+.tn-source { align-self: start; max-width: 100%; padding: 3px 5px; margin-left: -5px; border: 0; border-radius: 3px;
+  background: transparent; color: var(--note-muted); font-size: 12px; text-align: left; text-decoration: underline;
+  text-underline-offset: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.tn-source:disabled { text-decoration: none; cursor: default; }
+.tn-actions { display: flex; gap: 4px; align-items: center; padding-top: 8px; border-top: 1px var(--note-divider, solid) var(--note-line); }
+.tn-actions .menu-btn { height: 26px; padding: 0 8px; font-size: 12px; border-radius: 6px;
+  border-color: var(--note-control-border); color: var(--note-ink); }
+.tn-actions .tn-abort { margin-right: auto; }
+.tn-source:hover:enabled, .tn-actions .menu-btn:hover { background: color-mix(in srgb, var(--note-ink) 10%, transparent); }
+.tn-actions .menu-btn.primary { background: var(--note-ink); color: var(--sheet-base); }
+.tn-actions .menu-btn.primary:hover { background: var(--note-muted); }
+.thread-note :focus-visible { outline: 2px solid var(--note-focus); outline-offset: 1px; }
+
+@media (forced-colors: active) {
+  .thread-note :focus-visible { outline-color: Highlight; }
+}
+
+.is-thread-target { outline: 2px solid var(--ring); outline-offset: 2px; }
+.workspace.is-thread-target { outline-offset: -2px; }
+.thread-hint { pointer-events: none; }

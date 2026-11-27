@@ -1,0 +1,166 @@
+{
+  "thread": {
+    "id": "cccccccc-0000-4000-8000-000000000001",
+    "cwd": "/work/demo",
+    "preview": "Add a health check",
+    "turns": [
+      {
+        "id": "turn-demo-1",
+        "items": [
+          {
+            "type": "userMessage",
+            "id": "item-u1",
+            "clientId": null,
+            "content": [
+              {
+                "type": "text",
+                "text": "Add a health check",
+                "text_elements": []
+              },
+              {
+                "type": "localImage",
+                "path": "/tmp/demo/screen.png"
+              }
+            ]
+          },
+          {
+            "type": "reasoning",
+            "id": "item-r1",
+            "summary": [
+              "Looking for the server entry point.",
+              "It is src/server.ts."
+            ],
+            "content": []
+          },
+          {
+            "type": "commandExecution",
+            "id": "item-c1",
+            "pluginId": null,
+            "scriptPath": null,
+            "command": "/bin/zsh -lc 'rg -n listen src'",
+            "cwd": "/work/demo",
+            "processId": null,
+            "source": "agent",
+            "status": "completed",
+            "commandActions": [
+              {
+                "type": "search",
+                "command": "rg -n listen src",
+                "query": "listen",
+                "path": "src"
+              }
+            ],
+            "aggregatedOutput": "src/server.ts:12:app.listen(3000)\n",
+            "exitCode": 0,
+            "durationMs": 12
+          },
+          {
+            "type": "fileChange",
+            "id": "item-f1",
+            "status": "completed",
+            "changes": [
+              {
+                "path": "/work/demo/src/server.ts",
+                "kind": {
+                  "type": "update",
+                  "move_path": null
+                },
+                "diff": "@@ -10,3 +10,4 @@\n const app = express();\n+app.get(\"/health\", (_req, res) => res.send(\"ok\"));\n \n app.listen(3000);\n"
+              },
+              {
+                "path": "/work/demo/src/health.md",
+                "kind": {
+                  "type": "add"
+                },
+                "diff": "# Health\nGET /health returns ok.\n"
+              }
+            ]
+          },
+          {
+            "type": "mcpToolCall",
+            "id": "item-m1",
+            "server": "docs",
+            "tool": "search",
+            "status": "completed",
+            "arguments": {
+              "query": "express health"
+            },
+            "appContext": null,
+            "pluginId": null,
+            "readOnlyHint": true,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Use app.get for a route."
+                }
+              ],
+              "structuredContent": null,
+              "_meta": null
+            },
+            "error": null,
+            "durationMs": 40
+          },
+          {
+            "type": "webSearch",
+            "id": "item-w1",
+            "query": "express health check",
+            "action": {
+              "type": "search",
+              "query": "express health check",
+              "queries": null
+            },
+            "results": null
+          },
+          {
+            "type": "agentMessage",
+            "id": "item-a1",
+            "text": "Added a /health route.",
+            "phase": "final_answer",
+            "memoryCitation": null,
+            "delivery": null,
+            "questions": null
+          }
+        ],
+        "itemsView": "full",
+        "status": "completed",
+        "error": null,
+        "startedAt": 1795000000,
+        "completedAt": 1795000030,
+        "durationMs": 30000
+      },
+      {
+        "id": "turn-demo-2",
+        "items": [
+          {
+            "type": "userMessage",
+            "id": "item-u2",
+            "clientId": null,
+            "content": [
+              {
+                "type": "text",
+                "text": "Does this match?",
+                "text_elements": []
+              },
+              {
+                "type": "image",
+                "url": "data:image/jpeg;base64,/9j/4AAQ"
+              }
+            ]
+          },
+          {
+            "type": "futureThing",
+            "id": "item-x1",
+            "detail": "from a newer codex"
+          }
+        ],
+        "itemsView": "full",
+        "status": "completed",
+        "error": null,
+        "startedAt": 1795000100,
+        "completedAt": 1795000130,
+        "durationMs": 30000
+      }
+    ]
+  }
+}

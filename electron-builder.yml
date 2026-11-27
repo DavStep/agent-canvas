@@ -1,0 +1,33 @@
+# `npm run package`: an unsigned arm64 "Agent canvas.app" in release.noindex/mac-arm64/, built from
+# dist-electron/ and web/dist/ (npm run build). `npm run install-app` copies it to /Applications.
+# Spotlight skips a folder named *.noindex, so the build copy never shows in Launchpad or Spotlight
+# as a second Agent canvas, even when a build is left behind.
+appId: com.agent-canvas.desktop
+productName: Agent canvas
+copyright: Agent canvas
+directories:
+  output: release.noindex
+  buildResources: build
+# The Electron in node_modules (fetched on first use; `npm run package` asks for it first).
+electronDist: node_modules/electron/dist
+npmRebuild: false
+files:
+  - package.json
+  - dist-electron/**
+  - "!dist-electron/**/*.map"
+  - web/dist/**
+# The SDK's Claude Code is a native binary: it cannot run from inside app.asar. The engine points
+# the SDK at the unpacked copy (server/engines/claude/sdk.ts).
+asarUnpack:
+  - node_modules/@anthropic-ai/claude-agent-sdk-darwin-arm64/**
+mac:
+  target:
+    - target: dir
+      arch: arm64
+  icon: build/icon.icns
+  category: public.app-category.developer-tools
+  # Unsigned: built and run on this Mac only.
+  identity: null
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  darkModeSupport: true

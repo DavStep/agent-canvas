@@ -1,0 +1,1 @@
+{"type":"assistant","isSidechain":true,"gitBranch":"main","message":{"role":"assistant","model":"claude-invented-1","content":[{"type":"thinking","thinking":"Invented."}],"stop_reason":"end_turn"}}

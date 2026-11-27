@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent canvas: visual directions</title>
+<style>
+  html, body { height: 100%; margin: 0; background: #111; }
+  body { display: flex; flex-direction: column; font: 13px/1 system-ui, sans-serif; }
+  nav { display: flex; gap: 4px; align-items: center; padding: 6px 10px; background: #111; color: #999; }
+  nav span { margin-right: 8px; }
+  button { font: inherit; color: #bbb; background: none; border: 1px solid #333; padding: 6px 12px; cursor: pointer; }
+  button[aria-pressed="true"] { color: #111; background: #eee; border-color: #eee; }
+  button:focus-visible { outline: 2px solid #eee; outline-offset: 2px; }
+  iframe { flex: 1; width: 100%; border: 0; background: #fff; }
+</style>
+</head>
+<body>
+<nav>
+  <span>Direction</span>
+  <button data-src="ledger.html" aria-pressed="true">1 · Ledger</button>
+  <button data-src="nightdesk.html" aria-pressed="false">2 · Night desk</button>
+  <button data-src="daylight.html" aria-pressed="false">3 · Daylight</button>
+</nav>
+<iframe id="view" src="ledger.html" title="Mockup"></iframe>
+<script>
+  const view = document.getElementById('view');
+  const buttons = [...document.querySelectorAll('button')];
+  const show = (b) => {
+    buttons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    view.src = b.dataset.src;
+  };
+  buttons.forEach((b) => b.addEventListener('click', () => show(b)));
+  addEventListener('keydown', (e) => { const b = buttons[Number(e.key) - 1]; if (b) show(b); });
+</script>
+</body>
+</html>

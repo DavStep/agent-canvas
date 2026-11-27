@@ -1,0 +1,90 @@
+/* Links between sessions (docs/links.md): the lines on the board, the port a link is dragged from,
+   a waiting card's chip, the card menu and the "Run after…" dialog. Motion lives in motion.css. */
+
+/* ---------- the lines ---------- */
+/* Drawn in board coordinates over the zones; only the lines' hit strokes and × take the pointer. */
+.links { position: absolute; left: 0; top: 0; z-index: 4; overflow: visible; pointer-events: none; }
+.link-line { --link-ink: color-mix(in oklch, var(--foreground) 34%, transparent); color: var(--link-ink); }
+.link-line.is-done { --link-ink: color-mix(in oklch, var(--foreground) 46%, transparent); }
+.link-line.is-started { --link-ink: color-mix(in oklch, var(--live) 78%, transparent); }
+.link-line.is-blocked { --link-ink: var(--pill-negative); }
+/* The lines never take the pointer: one crossing a card must not stand in the way of clicking it. */
+.link-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: none; }
+.link-path { fill: none; stroke: var(--link-ink, var(--muted)); stroke-width: 1.5; stroke-linecap: round; }
+/* Dashed while it waits (motion.css lets the dash flow while the upstream works); solid once done. */
+.link-line:is(.is-working, .is-pending) .link-path { stroke-dasharray: 5 5; }
+.link-line.is-pending .link-path { opacity: 0.7; }
+.link-line.is-blocked .link-path { stroke-dasharray: 2 4; }
+.link-arrow { fill: var(--link-ink, var(--muted)); stroke: none; }
+.link-dot { fill: var(--background); stroke: var(--link-ink); stroke-width: 1.5; }
+.link-line:is(.is-working, .is-pending, .is-done):is(.is-near, :has(.link-x:hover, .link-x:focus-visible)) { --link-ink: color-mix(in oklch, var(--foreground) 72%, transparent); }
+.link-line.is-blocked:is(.is-near, :has(.link-x:hover)) { --link-ink: color-mix(in oklch, var(--pill-negative) 88%, white); }
+
+/* Removing a link: a × at the line's middle, shown while either of its cards is hovered, and for a
+   moment after, so the pointer can travel to it (visibility waits; hidden, it takes no pointer). */
+.link-x { visibility: hidden; opacity: 0; cursor: pointer; pointer-events: auto; transition: visibility 0s linear 900ms; }
+.link-line.is-near .link-x, .link-x:hover, .link-x:focus-visible { visibility: visible; opacity: 1; transition-delay: 0s; }
+.link-x circle { fill: var(--panel); stroke: var(--control-border); stroke-width: 1; }
+.link-x path { fill: none; stroke: var(--foreground); stroke-width: 1.5; stroke-linecap: round; }
+.link-x:hover circle { fill: var(--pill-negative); stroke: transparent; }
+.link-x:hover path { stroke: var(--pill-negative-ink); }
+.link-x:focus { outline: none; }
+.link-x:focus-visible circle { stroke: var(--ring); stroke-width: 2; }
+
+/* The line being dragged out of a port. */
+.link-temp { --link-ink: var(--highlight); }
+.link-temp .link-path { stroke-dasharray: 5 5; }
+
+/* ---------- the port ---------- */
+/* A small ring on the hovered card's right edge; dragging it onto another card links the two. */
+.link-port { position: absolute; left: 0; top: 0; z-index: 5; width: 14px; height: 14px; margin: -7px; padding: 0;
+  border: 1.5px solid var(--control-border); border-radius: 50%; background: var(--panel); cursor: crosshair; touch-action: none; }
+.link-port[hidden] { display: none; }
+.link-port:hover, .link-port.is-held { border-color: var(--highlight); background: color-mix(in oklch, var(--highlight) 30%, var(--panel)); scale: 1.15; }
+.links.is-linking ~ .link-port, .board:has(.links.is-linking) { cursor: crosshair; }
+
+/* The card a link is about to be dropped on. */
+.card.is-link-target { outline: 2px solid var(--highlight); outline-offset: 3px; }
+
+/* ---------- waiting cards ---------- */
+.card.is-waiting { border-style: dashed; }
+.card.is-blocked, .card.is-blocked:hover { border-color: color-mix(in oklch, var(--pill-negative) 70%, transparent); }
+.link-wait-row { display: flex; margin-top: 8px; min-width: 0; }
+.chip.link-wait { gap: 5px; min-width: 0; max-width: 100%; padding: 0 8px 0 6px; }
+.chip.link-wait > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip.link-wait.is-blocked { color: var(--pill-negative); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--pill-negative) 45%, transparent); }
+.chip.link-wait.is-queued, .chip.link-wait.is-starting { color: var(--foreground); }
+.link-queue-icon { flex: none; width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+/* A planned session is a card for a chat not made yet: quieter, and opens its dialog when clicked. */
+.card[data-card-id^="plan:"] { cursor: pointer; opacity: 0.86; }
+
+/* ---------- the card menu ---------- */
+.menu.card-menu { position: fixed; top: 0; z-index: 40; min-width: 200px; }
+.card-menu .menu-item .link-queue-icon { color: var(--muted); }
+.card-menu .menu-item:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+
+/* ---------- "Run after…" ---------- */
+.lk .ns-panel { width: 520px; max-width: calc(100vw - 48px); }
+.lk-note { margin-top: 6px; font-size: 12px; line-height: 18px; color: var(--muted); }
+.lk-sessions { margin: 14px 0 0; padding: 0; border: 0; min-width: 0; }
+.lk-sessions legend, .lk-prompt { padding: 0; margin-bottom: 6px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--nav-ink); }
+.lk-filter { width: 100%; height: 30px; padding: 0 10px; border: 1px solid var(--card-border); border-radius: var(--radius-control);
+  background: transparent; color: var(--foreground); font: inherit; font-size: 12px; }
+.lk-filter:focus-visible, .lk-prompt textarea:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.lk-sessions ul { max-height: 200px; margin: 6px 0 0; padding: 0; overflow-y: auto; list-style: none; }
+.lk-row { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border-radius: 6px; font-size: 12px; line-height: 16px; cursor: pointer; }
+.lk-row:hover { background: var(--row-hover); }
+.lk-row:has(input:checked) { background: color-mix(in oklch, var(--highlight) 11%, var(--background)); }
+.lk-row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lk-state { flex: none; font: 400 11px/16px var(--font-mono); color: var(--muted); }
+.lk-empty { padding: 8px; font: 400 11px/16px var(--font-mono); color: var(--muted); }
+.lk-mode { display: flex; gap: 16px; margin-top: 10px; font-size: 12px; line-height: 16px; }
+.lk-mode label, .lk-check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.lk-prompt { display: block; margin-top: 14px; }
+.lk-prompt textarea { display: block; width: 100%; min-height: 88px; max-height: 40vh; margin-top: 6px; padding: 8px 10px; resize: vertical;
+  border: 1px solid var(--card-border); border-radius: var(--radius-control); background: transparent; color: var(--foreground);
+  font: 400 13px/20px var(--font-sans); }
+.lk-prompt textarea::placeholder, .lk-filter::placeholder { color: var(--muted); }
+.lk-check { margin-top: 10px; font-size: 12px; line-height: 16px; color: var(--nav-ink); }
+.lk input[type="checkbox"], .lk input[type="radio"] { accent-color: var(--highlight); }
+.lk-error { margin-top: 10px; font-size: 12px; line-height: 16px; color: var(--pill-negative); white-space: normal; }

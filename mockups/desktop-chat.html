@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent canvas · Chat</title>
+<style>
+  /* Fonts: the app's own @fontsource files (repository root node_modules). */
+  @font-face { font-family: Inter; font-weight: 400; src: url('../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2'); }
+  @font-face { font-family: Inter; font-weight: 500; src: url('../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2') format('woff2'); }
+  @font-face { font-family: Inter; font-weight: 600; src: url('../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Geist Mono'; font-weight: 400; src: url('../node_modules/@fontsource/geist-mono/files/geist-mono-latin-400-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Geist Mono'; font-weight: 500; src: url('../node_modules/@fontsource/geist-mono/files/geist-mono-latin-500-normal.woff2') format('woff2'); }
+
+  /* Tokens: web/src/theme.css, verbatim. */
+  :root {
+    --sidebar: oklch(0.196 0 0); --background: oklch(0.226 0 0); --panel: oklch(0.252 0 0); --surface: oklch(0.212 0 0);
+    --control: transparent; --control-border: oklch(0.47 0 0); --border: oklch(0.31 0 0); --card-border: oklch(0.29 0 0);
+    --accent: oklch(0.355 0 0); --row-hover: oklch(0.245 0 0); --chip: oklch(0.39 0 0); --chip-ink: oklch(0.96 0 0);
+    --foreground: oklch(0.97 0 0); --nav-ink: oklch(0.90 0 0); --muted: oklch(0.72 0 0);
+    --highlight: oklch(0.78 0.13 305);
+    --chart-1: #9964e5; --chart-2: #20a89b; --chart-3: #d97230; --chart-4: #ca4b85; --chart-5: #398ad6; --chart-6: #57a943;
+    --chart-quiet: oklch(0.41 0 0);
+    --pill-info: oklch(0.80 0.09 305); --pill-info-ink: oklch(0.33 0.13 305);
+    --pill-positive: oklch(0.83 0.11 162); --pill-positive-ink: oklch(0.32 0.07 162);
+    --pill-warning: oklch(0.89 0.12 95); --pill-warning-ink: oklch(0.36 0.07 85);
+    --pill-negative: oklch(0.83 0.085 18); --pill-negative-ink: oklch(0.38 0.13 25);
+    --live: oklch(0.77 0.16 162);
+    --radius-card: 14px; --radius-control: 8px;
+    --font-mono: 'Geist Mono', 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+    --card-shadow: inset 0 1px 0 oklch(1 0 0 / 4%), 0 18px 40px -24px oklch(0 0 0 / 70%);
+    --lift-shadow: inset 0 1px 0 oklch(1 0 0 / 6%), 0 28px 60px -28px oklch(0 0 0 / 85%);
+    --ring: var(--highlight);
+    --orb-ink: var(--foreground); --orb-accent: oklch(0.78 0.13 305); --orb-warning: oklch(0.80 0.16 75);
+    --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --ease-out: cubic-bezier(.22, .7, .25, 1);
+    --grid-dot: color-mix(in oklch, var(--foreground) 11%, transparent);
+    --ink-soft: color-mix(in oklch, var(--foreground) 86%, var(--background));
+    --ink-idle: color-mix(in oklch, var(--foreground) 74%, var(--background));
+    --glass: color-mix(in oklch, var(--panel) 76%, transparent);
+    --glass-edge: color-mix(in oklch, var(--foreground) 12%, transparent);
+    --needs-edge: color-mix(in oklch, var(--orb-warning) 72%, transparent);
+    --needs-fill: color-mix(in oklch, var(--orb-warning) 5%, var(--panel));
+    --idle-fill: color-mix(in oklch, var(--panel) 45%, var(--surface));
+    --cr-claude: #d97757; --cr-claude-quiet: oklch(0.52 0.07 42);
+    --cr-codex: #a453f0; --cr-codex-quiet: oklch(0.47 0.1 305);
+    --eye: oklch(0.17 0 0); --acc: oklch(0.93 0 0); --acc-2: oklch(0.63 0 0); --cheek: var(--pill-negative);
+
+    /* Mockup-only, derived: diff tints and the selection fill. */
+    --add-fill: color-mix(in oklch, var(--live) 11%, transparent);
+    --add-ink: var(--pill-positive);
+    --del-fill: color-mix(in oklch, var(--pill-negative) 11%, transparent);
+    --del-ink: var(--pill-negative);
+    --sel-fill: color-mix(in oklch, var(--highlight) 9%, var(--sidebar));
+    --sel-edge: color-mix(in oklch, var(--highlight) 60%, transparent);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--sidebar); color: var(--foreground);
+    font: 400 13px/18px var(--font-sans); font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased; color-scheme: dark;
+    display: grid; grid-template-columns: 240px minmax(0, 1fr) 380px; grid-template-rows: 44px minmax(0, 1fr);
+    min-width: 1280px;
+  }
+  .mono { font-family: var(--font-mono); }
+  button { font: inherit; color: inherit; cursor: default; background: none; border: 0; }
+  svg.i { flex: none; display: block; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- creatures (app.css, verbatim) ---------- */
+  .cr { flex: none; display: block; overflow: visible;
+    --cr-light: color-mix(in oklch, var(--cr-hue) 62%, white);
+    --cr-shade: color-mix(in oklch, var(--cr-hue) 62%, black); }
+  .cr .b { fill: var(--cr-hue); } .cr .h { fill: var(--cr-light); } .cr .s { fill: var(--cr-shade); }
+  .cr .e, .cr .t { fill: var(--eye); } .cr .w, .cr .g { fill: var(--acc); }
+  .cr .a { fill: var(--orb-warning); } .cr .p { fill: var(--muted); } .cr .c { fill: var(--foreground); }
+  .cr .z { fill: var(--muted); } .cr .k { fill: var(--foreground); }
+  .cr.is-quiet { --cr-light: color-mix(in oklch, var(--cr-hue) 80%, var(--foreground)); }
+  .cr.is-quiet .w, .cr.is-quiet .g { fill: var(--acc-2); }
+
+  /* ---------- title bar ---------- */
+  .topbar { grid-column: 1 / -1; display: grid; grid-template-columns: 240px minmax(0, 1fr) 380px; align-items: center; min-width: 0; }
+  .back { display: inline-flex; align-items: center; gap: 4px; justify-self: start; height: 28px; margin-left: 12px; padding: 0 10px 0 6px; border-radius: var(--radius-control);
+    color: var(--nav-ink); font-size: 12px; line-height: 16px; font-weight: 500; }
+  .back:hover { background: var(--row-hover); color: var(--foreground); }
+  .back kbd { margin-left: 6px; font: 500 11px/16px var(--font-mono); padding: 0 5px; border-radius: 5px; border: 1px solid var(--card-border); color: var(--muted); }
+  .heading { min-width: 0; padding: 0 33px; }
+  .heading .col { display: flex; align-items: baseline; gap: 12px; white-space: nowrap; }
+  .heading h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 13px; line-height: 18px; font-weight: 600; letter-spacing: -0.005em; }
+  .heading .meta { flex: none; display: flex; gap: 6px; font: 400 11px/16px var(--font-mono); color: var(--muted); }
+  .heading .meta .sep { color: var(--chart-quiet); }
+  .account { justify-self: end; display: flex; align-items: center; gap: 4px; margin-right: 12px; }
+  .avatar { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px 0 3px; border-radius: 999px; color: var(--muted); }
+  .avatar:hover { background: var(--row-hover); }
+  .avatar span { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--foreground);
+    font-size: 11px; line-height: 16px; font-weight: 600; }
+
+  /* ---------- left rail (outer room) ---------- */
+  .rail { grid-column: 1; grid-row: 2; min-height: 0; display: flex; flex-direction: column; padding: 4px 8px 8px 12px; }
+  .filter { display: flex; align-items: center; gap: 8px; width: 100%; height: 32px; padding: 0 8px 0 10px; border: 1px solid var(--card-border); border-radius: var(--radius-control);
+    color: var(--foreground); font-size: 12px; line-height: 16px; }
+  .filter:hover { border-color: var(--control-border); }
+  .filter .hues { display: flex; gap: 2px; }
+  .filter .hues i { width: 6px; height: 12px; border-radius: 2px; }
+  .filter .label { color: var(--muted); }
+  .filter .chev { margin-left: auto; color: var(--muted); }
+  .sessions { flex: 1; min-height: 0; overflow: hidden; margin-top: 8px; }
+  .group + .group { margin-top: 12px; }
+  .group h2 { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--nav-ink); }
+  .group h2 .n { margin-left: auto; font: 400 11px/16px var(--font-mono); color: var(--muted); }
+  .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; }
+  .dot.needs { background: var(--orb-warning); }
+  .dot.live { background: var(--live); }
+  .dot.idle { box-shadow: inset 0 0 0 1.5px var(--muted); }
+  .s-row { display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 10px; align-items: center; padding: 6px 8px; border-radius: var(--radius-control); }
+  .s-row:hover { background: var(--row-hover); }
+  .s-row .cr { align-self: start; margin-top: 4px; }
+  .s-row .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 18px; font-weight: 500; color: var(--foreground); }
+  .s-row .d { display: flex; gap: 8px; min-width: 0; font: 400 11px/16px var(--font-mono); color: var(--muted); white-space: nowrap; }
+  .s-row .d span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .s-row .d .age { margin-left: auto; flex: none; }
+  .s-row.is-needs .d .age { color: var(--foreground); }
+  .s-row.is-idle { padding-block: 5px; }
+  .s-row.is-idle .cr { margin-top: 0; align-self: center; }
+  .s-row.is-idle .t { font-weight: 400; color: var(--ink-idle); }
+  .s-row.is-selected { background: var(--sel-fill); box-shadow: inset 0 0 0 1px var(--sel-edge); }
+  .new { display: flex; align-items: center; gap: 8px; height: 36px; margin-top: 8px; padding: 0 8px 0 12px; border: 1px solid var(--control-border); border-radius: var(--radius-control);
+    font-size: 13px; line-height: 18px; font-weight: 500; color: var(--foreground); }
+  .new:hover { background: var(--row-hover); }
+  .new kbd, .ask-keys kbd { margin-left: auto; font: 500 11px/16px var(--font-mono); padding: 0 5px; border-radius: 5px; border: 1px solid var(--card-border); color: var(--muted); }
+
+  /* ---------- chat (the desk) ---------- */
+  .desk { grid-column: 2; grid-row: 2; min-height: 0; min-width: 0; margin-bottom: 8px; display: flex; flex-direction: column; overflow: hidden;
+    background: var(--background); border: 1px solid var(--card-border); border-radius: var(--radius-card); }
+  .thread { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px 32px 20px; }
+  .col { width: 100%; max-width: 680px; margin: 0 auto; }
+  .day { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; font: 400 11px/16px var(--font-mono); color: var(--muted); }
+  .day::before, .day::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .you { width: fit-content; max-width: 76%; margin: 0 0 24px auto; padding: 8px 12px; border-radius: 12px 12px 4px 12px; background: var(--accent); color: var(--foreground); line-height: 20px; }
+  .who { display: flex; align-items: center; gap: 8px; height: 20px; margin-bottom: 12px; }
+  .who b { font-size: 12px; line-height: 16px; font-weight: 600; }
+  .who span { font: 400 11px/16px var(--font-mono); color: var(--muted); }
+  .thought { display: inline-flex; align-items: center; gap: 6px; height: 24px; margin: 0 0 8px -4px; padding: 0 8px 0 4px; border-radius: 6px; color: var(--muted); font-size: 12px; line-height: 16px; }
+  .thought:hover { background: var(--row-hover); color: var(--foreground); }
+  .reply p { color: var(--ink-soft); line-height: 20px; max-width: 640px; text-wrap: pretty; }
+  .reply p + p { margin-top: 8px; }
+  code { font: 400 12px/16px var(--font-mono); padding: 1px 5px; border-radius: 4px; background: var(--panel); border: 1px solid var(--card-border); color: var(--foreground); }
+
+  /* Tool rows: one line each, expand in place. */
+  .log { margin-top: 16px; border: 1px solid var(--card-border); border-radius: 10px; background: var(--surface); overflow: hidden; }
+  .tool { display: grid; grid-template-columns: 16px 40px minmax(0, 1fr) auto; align-items: center; column-gap: 8px; height: 36px; padding: 0 12px 0 10px; font-size: 12px; line-height: 16px; }
+  .tool + .tool, .tool + .diff, .diff + .tool { border-top: 1px solid var(--card-border); }
+  .tool:hover { background: var(--row-hover); }
+  .tool .chev { color: var(--muted); }
+  .tool .name { font-weight: 500; color: var(--foreground); }
+  .tool .target { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 12px/16px var(--font-mono); color: var(--ink-soft); }
+  .tool .m { font: 400 11px/16px var(--font-mono); color: var(--muted); white-space: nowrap; }
+  .tool.is-selected { background: color-mix(in oklch, var(--highlight) 8%, var(--surface)); }
+  .plus { color: var(--add-ink); } .minus { color: var(--del-ink); }
+  .m .plus + .minus { margin-left: 6px; }
+
+  .diff { font: 400 12px/20px var(--font-mono); background: var(--sidebar); padding: 4px 0; }
+  .diff .ln { display: grid; grid-template-columns: 40px 16px minmax(0, 1fr); padding-right: 12px; color: var(--ink-soft); white-space: pre; }
+  .diff .ln > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .diff .ln .no { padding-right: 10px; text-align: right; color: var(--muted); }
+  .diff .ln .sg { color: var(--muted); }
+  .diff .ln.add { background: var(--add-fill); color: var(--foreground); }
+  .diff .ln.add .sg { color: var(--add-ink); }
+  .diff .ln.del { background: var(--del-fill); color: var(--foreground); }
+  .diff .ln.del .sg { color: var(--del-ink); }
+
+  /* The approval: amber hairline, amber fill, amber button. The loudest thing on screen. */
+  .ask { margin-top: 12px; border: 1px solid var(--needs-edge); border-radius: 12px; background: var(--needs-fill); overflow: hidden; }
+  .ask .tool { border-bottom: 1px solid color-mix(in oklch, var(--orb-warning) 22%, transparent); }
+  .ask .tool:hover { background: transparent; }
+  .ask .tool .m { display: inline-flex; align-items: center; gap: 6px; color: var(--orb-warning); }
+  .ask-body { padding: 12px 12px 12px 34px; }
+  .ask-body h3 { font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .ask-body p { margin-top: 4px; font-size: 12px; line-height: 16px; color: var(--muted); }
+  .ask-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 14px; border-radius: var(--radius-control); font-size: 13px; line-height: 18px; font-weight: 500; white-space: nowrap; }
+  .btn.allow { background: var(--pill-warning); color: var(--pill-warning-ink); font-weight: 600; }
+  .btn.outline { border: 1px solid var(--control-border); color: var(--foreground); }
+  .btn.ghost { color: var(--nav-ink); }
+  .btn.ghost:hover, .btn.outline:hover { background: var(--row-hover); }
+  .ask-keys { display: flex; align-items: center; gap: 6px; margin-left: auto; font: 400 11px/16px var(--font-mono); color: var(--muted); }
+  .ask-keys kbd { margin-left: 0; }
+  .ask-keys kbd + span { margin-right: 6px; }
+
+  /* Composer */
+  .composer-wrap { flex: none; padding: 0 32px 16px; }
+  .composer { border: 1px solid var(--card-border); border-radius: var(--radius-card); background: var(--panel); box-shadow: var(--card-shadow); padding: 12px 8px 8px 16px; }
+  .composer .field { height: 40px; color: var(--muted); line-height: 20px; }
+  .composer .bar { display: flex; align-items: center; gap: 4px; margin-left: -8px; }
+  .icon-btn { display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radius-control); color: var(--muted); }
+  .icon-btn:hover { background: var(--row-hover); color: var(--foreground); }
+  .picker { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 8px 0 10px; border-radius: var(--radius-control); color: var(--nav-ink); font-size: 12px; line-height: 16px; font-weight: 500; }
+  .picker:hover { background: var(--row-hover); color: var(--foreground); }
+  .picker svg { color: var(--muted); }
+  .picker.push { margin-left: auto; }
+  .bar .rule { width: 1px; height: 16px; margin: 0 4px; background: var(--border); }
+  /* Empty field: send is at rest until there is something to send. */
+  .send { display: grid; place-items: center; width: 32px; height: 32px; margin-left: 4px; border-radius: var(--radius-control); background: var(--accent); color: var(--nav-ink); }
+
+  /* ---------- preview pane (outer room) ---------- */
+  .preview { grid-column: 3; grid-row: 2; min-height: 0; display: flex; flex-direction: column; padding: 0 16px 8px; }
+  .tabs-row { flex: none; display: flex; align-items: center; justify-content: space-between; }
+  .tabs { display: inline-flex; padding: 2px; border: 1px solid var(--card-border); border-radius: var(--radius-control); }
+  .tab { height: 26px; padding: 0 12px; border-radius: 6px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); }
+  .tab.is-on { background: var(--accent); color: var(--foreground); }
+  .follow { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border-radius: var(--radius-control); font-size: 12px; line-height: 16px; color: var(--muted); }
+  .follow:hover { background: var(--row-hover); color: var(--foreground); }
+  .p-head { flex: none; display: flex; align-items: baseline; justify-content: space-between; margin: 20px 0 8px; padding: 0 8px; }
+  .p-head h2 { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); }
+  .p-head span { font: 400 11px/16px var(--font-mono); color: var(--muted); }
+  .calls { flex: none; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+  .call { display: grid; grid-template-columns: 16px 36px minmax(0, 1fr) auto; column-gap: 8px; align-items: center; min-height: 36px; padding: 8px 10px 8px 8px; border-radius: var(--radius-control); font-size: 12px; line-height: 16px; }
+  .call:hover { background: var(--row-hover); }
+  .call .name { font-weight: 500; }
+  .call .target { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 12px/16px var(--font-mono); color: var(--ink-soft); }
+  .call .m { font: 400 11px/16px var(--font-mono); color: var(--muted); white-space: nowrap; }
+  .call .sub { grid-column: 3 / -1; margin-top: 2px; font: 500 11px/16px var(--font-mono); color: var(--orb-warning); }
+  .call .ok { color: var(--live); }
+  .call .wait { display: grid; place-items: center; width: 16px; height: 16px; }
+  .call.is-selected { background: var(--sel-fill); box-shadow: inset 0 0 0 1px var(--sel-edge); }
+
+  .detail { flex: 1; min-height: 0; display: flex; flex-direction: column; margin-top: 16px; border: 1px solid var(--card-border); border-radius: var(--radius-card); background: var(--background); overflow: hidden; }
+  .d-head { flex: none; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border-bottom: 1px solid var(--card-border); font-size: 12px; line-height: 16px; }
+  .d-head .name { font-weight: 500; }
+  .d-head .target { font: 400 12px/16px var(--font-mono); color: var(--ink-soft); }
+  .d-head .m { margin-left: auto; font: 400 11px/16px var(--font-mono); }
+  .hunk { flex: none; padding: 4px 14px; background: var(--surface); border-bottom: 1px solid var(--card-border); font: 400 11px/16px var(--font-mono); color: var(--muted); }
+  .detail .diff { flex: 1; min-height: 0; overflow: hidden; background: transparent; padding: 4px 0 8px; }
+  .detail .diff .ln { grid-template-columns: 32px 32px 16px minmax(0, 1fr); }
+  .detail .diff .ln .no { padding-right: 8px; }
+  .detail .diff .ln .no + .no { padding-right: 8px; }
+  .d-act { height: 24px; margin-right: -8px; padding: 0 8px; border-radius: 6px; font: 500 12px/16px var(--font-sans); color: var(--nav-ink); }
+  .d-act:hover { background: var(--row-hover); color: var(--foreground); }
+  .d-foot { flex: none; display: flex; align-items: center; justify-content: space-between; height: 36px; padding: 0 14px; border-top: 1px solid var(--card-border); font: 400 11px/16px var(--font-mono); color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ======================= title bar ======================= -->
+<header class="topbar">
+  <button class="back" aria-label="Back to canvas">
+    <svg class="i" width="16" height="16" viewBox="0 0 16 16"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>
+    Canvas<kbd>esc</kbd>
+  </button>
+  <div class="heading"><div class="col">
+    <h1>Enable account deletion approvals on Hostly</h1>
+    <div class="meta"><span>garden-sim</span><span class="sep">·</span><span>Claude</span><span class="sep">·</span><span>Fable 5.2</span><span class="sep">·</span><span>here</span></div>
+  </div></div>
+  <div class="account">
+    <button class="avatar" aria-label="Profile and usage"><span>D</span>
+      <svg class="i" width="12" height="12" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5l3-3"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ======================= left rail ======================= -->
+<nav class="rail" aria-label="Sessions">
+  <button class="filter" aria-label="Filter by zone">
+    <span class="hues"><i style="background: var(--chart-1)"></i><i style="background: var(--chart-2)"></i><i style="background: var(--chart-3)"></i><i style="background: var(--chart-4)"></i></span>
+    <span>All zones</span>
+    <svg class="i chev" width="12" height="12" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5l3-3"/></svg>
+  </button>
+
+  <div class="sessions">
+    <section class="group">
+      <h2><i class="dot needs"></i>Needs you<span class="n">2</span></h2>
+      <div class="s-row is-needs is-selected">
+        <svg class="cr" style="--cr-hue: var(--cr-claude)" width="32" height="20" viewBox="0 0 32 20" shape-rendering="crispEdges" aria-hidden="true"><g><rect class="h" x="3" y="6" width="2" height="2"/><rect class="b" x="6" y="6" width="2" height="2"/><rect class="b" x="9" y="6" width="2" height="2"/><rect class="b" x="12" y="6" width="2" height="2"/><rect class="b" x="15" y="6" width="2" height="2"/><rect class="b" x="3" y="9" width="2" height="2"/><rect class="e" x="6" y="9" width="2" height="2"/><rect class="b" x="9" y="9" width="2" height="2"/><rect class="e" x="12" y="9" width="2" height="2"/><rect class="b" x="15" y="9" width="2" height="2"/><rect class="b" x="0" y="12" width="2" height="2"/><rect class="b" x="3" y="12" width="2" height="2"/><rect class="b" x="6" y="12" width="2" height="2"/><rect class="b" x="9" y="12" width="2" height="2"/><rect class="b" x="12" y="12" width="2" height="2"/><rect class="b" x="15" y="12" width="2" height="2"/><rect class="b" x="18" y="12" width="2" height="2"/><rect class="b" x="21" y="12" width="2" height="2"/><rect class="b" x="24" y="12" width="2" height="2"/><rect class="b" x="27" y="12" width="2" height="2"/><rect class="b" x="3" y="15" width="2" height="2"/><rect class="b" x="6" y="15" width="2" height="2"/><rect class="b" x="9" y="15" width="2" height="2"/><rect class="b" x="12" y="15" width="2" height="2"/><rect class="b" x="15" y="15" width="2" height="2"/></g><g><rect class="s" x="3" y="18" width="2" height="2"/><rect class="s" x="9" y="18" width="2" height="2"/><rect class="s" x="15" y="18" width="2" height="2"/></g><g><rect class="a" x="24" y="0" width="2" height="2"/><rect class="a" x="27" y="0" width="2" height="2"/><rect class="a" x="30" y="0" width="2" height="2"/><rect class="a" x="24" y="3" width="2" height="2"/><rect class="a" x="27" y="3" width="2" height="2"/><rect class="a" x="30" y="3" width="2" height="2"/><rect class="p" x="27" y="6" width="2" height="2"/><rect class="p" x="27" y="9" width="2" height="2"/></g></svg>
+        <div><div class="t">Enable account deletion approvals on Hostly</div><div class="d"><span>permission</span><span class="age">2m</span></div></div>
+      </div>
+      <div class="s-row is-needs">
+        <svg class="cr" style="--cr-hue: var(--cr-claude)" width="32" height="20" viewBox="0 0 32 20" shape-rendering="crispEdges" aria-hidden="true"><g><rect class="h" x="3" y="6" width="2" height="2"/><rect class="b" x="6" y="6" width="2" height="2"/><rect class="b" x="9" y="6" width="2" height="2"/><rect class="b" x="12" y="6" width="2" height="2"/><rect class="b" x="15" y="6" width="2" height="2"/><rect class="b" x="3" y="9" width="2" height="2"/><rect class="e" x="6" y="9" width="2" height="2"/><rect class="b" x="9" y="9" width="2" height="2"/><rect class="e" x="12" y="9" width="2" height="2"/><rect class="b" x="15" y="9" width="2" height="2"/><rect class="b" x="0" y="12" width="2" height="2"/><rect class="b" x="3" y="12" width="2" height="2"/><rect class="b" x="6" y="12" width="2" height="2"/><rect class="b" x="9" y="12" width="2" height="2"/><rect class="b" x="12" y="12" width="2" height="2"/><rect class="b" x="15" y="12" width="2" height="2"/><rect class="b" x="18" y="12" width="2" height="2"/><rect class="b" x="21" y="12" width="2" height="2"/><rect class="b" x="24" y="12" width="2" height="2"/><rect class="b" x="27" y="12" width="2" height="2"/><rect class="b" x="3" y="15" width="2" height="2"/><rect class="b" x="6" y="15" width="2" height="2"/><rect class="b" x="9" y="15" width="2" height="2"/><rect class="b" x="12" y="15" width="2" height="2"/><rect class="b" x="15" y="15" width="2" height="2"/></g><g><rect class="s" x="3" y="18" width="2" height="2"/><rect class="s" x="9" y="18" width="2" height="2"/><rect class="s" x="15" y="18" width="2" height="2"/></g><g><rect class="a" x="24" y="0" width="2" height="2"/><rect class="a" x="27" y="0" width="2" height="2"/><rect class="a" x="30" y="0" width="2" height="2"/><rect class="a" x="24" y="3" width="2" height="2"/><rect class="a" x="27" y="3" width="2" height="2"/><rect class="a" x="30" y="3" width="2" height="2"/><rect class="p" x="27" y="6" width="2" height="2"/><rect class="p" x="27" y="9" width="2" height="2"/></g></svg>
+        <div><div class="t">Purchases unavailable in production</div><div class="d"><span>reply</span><span class="age">14m</span></div></div>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2><i class="dot live"></i>Working<span class="n">2</span></h2>
+      <div class="s-row">
+        <svg class="cr" style="--cr-hue: var(--cr-claude)" width="32" height="20" viewBox="0 0 32 20" shape-rendering="crispEdges" aria-hidden="true"><g><rect class="h" x="3" y="6" width="2" height="2"/><rect class="b" x="6" y="6" width="2" height="2"/><rect class="b" x="9" y="6" width="2" height="2"/><rect class="b" x="12" y="6" width="2" height="2"/><rect class="b" x="15" y="6" width="2" height="2"/><rect class="b" x="3" y="9" width="2" height="2"/><rect class="e" x="6" y="9" width="2" height="2"/><rect class="b" x="9" y="9" width="2" height="2"/><rect class="e" x="12" y="9" width="2" height="2"/><rect class="b" x="15" y="9" width="2" height="2"/><rect class="b" x="0" y="12" width="2" height="2"/><rect class="b" x="3" y="12" width="2" height="2"/><rect class="b" x="6" y="12" width="2" height="2"/><rect class="b" x="9" y="12" width="2" height="2"/><rect class="b" x="12" y="12" width="2" height="2"/><rect class="b" x="15" y="12" width="2" height="2"/><rect class="b" x="18" y="12" width="2" height="2"/><rect class="b" x="3" y="15" width="2" height="2"/><rect class="b" x="6" y="15" width="2" height="2"/><rect class="b" x="9" y="15" width="2" height="2"/><rect class="b" x="12" y="15" width="2" height="2"/><rect class="b" x="15" y="15" width="2" height="2"/></g><g><rect class="s" x="3" y="18" width="2" height="2"/><rect class="s" x="9" y="18" width="2" height="2"/><rect class="s" x="15" y="18" width="2" height="2"/></g><g><rect class="c" x="24" y="9" width="2" height="2"/><rect class="c" x="24" y="12" width="2" height="2"/><rect class="c" x="24" y="15" width="2" height="2"/></g></svg>
+        <div><div class="t">Reconnection dialog and animation issues</div><div class="d"><span>Editing ReconnectDialog.tsx</span><span class="age">6m</span></div></div>
+      </div>
+      <div class="s-row">
+        <svg class="cr" style="--cr-hue: var(--cr-codex)" width="32" height="20" viewBox="0 0 32 20" shape-rendering="crispEdges" aria-hidden="true"><g><rect class="h" x="3" y="3" width="2" height="2"/><rect class="h" x="6" y="3" width="2" height="2"/><rect class="h" x="12" y="3" width="2" height="2"/><rect class="h" x="15" y="3" width="2" height="2"/><rect class="h" x="0" y="6" width="2" height="2"/><rect class="h" x="3" y="6" width="2" height="2"/><rect class="b" x="6" y="6" width="2" height="2"/><rect class="b" x="9" y="6" width="2" height="2"/><rect class="b" x="12" y="6" width="2" height="2"/><rect class="b" x="15" y="6" width="2" height="2"/><rect class="b" x="18" y="6" width="2" height="2"/><rect class="b" x="0" y="9" width="2" height="2"/><rect class="e" x="3" y="9" width="2" height="2"/><rect class="e" x="6" y="9" width="2" height="2"/><rect class="b" x="9" y="9" width="2" height="2"/><rect class="e" x="12" y="9" width="2" height="2"/><rect class="g" x="15" y="9" width="2" height="2"/><rect class="b" x="18" y="9" width="2" height="2"/><rect class="b" x="0" y="12" width="2" height="2"/><rect class="b" x="3" y="12" width="2" height="2"/><rect class="b" x="6" y="12" width="2" height="2"/><rect class="b" x="9" y="12" width="2" height="2"/><rect class="b" x="12" y="12" width="2" height="2"/><rect class="b" x="15" y="12" width="2" height="2"/><rect class="b" x="18" y="12" width="2" height="2"/><rect class="b" x="3" y="15" width="2" height="2"/><rect class="t" x="6" y="15" width="2" height="2"/><rect class="t" x="9" y="15" width="2" height="2"/><rect class="t" x="12" y="15" width="2" height="2"/><rect class="b" x="15" y="15" width="2" height="2"/><rect class="b" x="6" y="18" width="2" height="2"/><rect class="b" x="9" y="18" width="2" height="2"/><rect class="b" x="12" y="18" width="2" height="2"/></g><g></g><g><rect class="c" x="24" y="9" width="2" height="2"/><rect class="c" x="24" y="12" width="2" height="2"/><rect class="c" x="24" y="15" width="2" height="2"/></g></svg>
+        <div><div class="t">Database visualization dashboard</div><div class="d"><span>Running tests</span><span class="age">11m</span></div></div>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2><i class="dot idle"></i>Idle<span class="n">3</span></h2>
+      <div class="s-row is-idle"><svg class="cr is-quiet" style="--cr-hue: var(--cr-claude-quiet)" width="32" height="20" viewBox="0 0 32 20" shape-rendering="crispEdges" aria-hidden="true"><g><rect class="h" x="3" y="6" width="2" height="2"/><rect class="b" x="6" y="6" width="2" height="2"/><rect class="b" x="9" y="6" width="2" height="2"/><rect class="b" x="12" y="6" width="2" height="2"/><rect class="b" x="15" y="6" width="2" height="2"/><rect class="e" x="3" y="9" width="2" height="2"/><rect class="e" x="6" y="9" width="2" height="2"/><rect class="b" x="9" y="9" width="2" height="2"/><rect class="e" x="12" y="9" width="2" height="2"/><rect class="e" x="15" y="9" width="2" height="2"/><rect class="b" x="0" y="12" width="2" height="2"/><rect class="b" x="3" y="12" width="2" height="2"/><rect class="b" x="6" y="12" width="2" height="2"/><rect class="b" x="9" y="12" width="2" height="2"/><rect class="b" x="12" y="12" width="2" height="2"/><rect class="b" x="15" y="12" width="2" height="2"/><rect class="b" x="18" y="12" width="2" height="2"/><rect class="b" x="3" y="15" width="2" height="2"/><rect class="b" x="6" y="15" width="2" height="2"/><rect class="b" x="9" y="15" width="2" height="2"/><rect class="b" x="12" y="15" width="2" height="2"/><rect class="b" x="15" y="15" width="2" height="2"/></g><g><rect class="s" x="3" y="18" width="2" height="2"/><rect class="s" x="9" y="18" width="2" height="2"/><rect class="s" x="15" y="18" width="2" height="2"/></g><g><rect class="z" x="24" y="0" width="2" height="2"/><rect class="z" x="27" y="0" width="2" height="2"/><rect class="z" x="30" y="0" width="2" height="2"/><rect class="z" x="27" y="3" width="2" height="2"/><rect class="z" x="24" y="6" width="2" height="2"/><rect class="z" x="27" y="6" width="2" height="2"/><rect class="z" x="30" y="6" width="2" height="2"/></g></svg><div class="t">Preview improvements</div></div>
+      <div class="s-row is-idle"><svg class="cr is-quiet" style="--cr-hue: var(--cr-codex-quiet)" width="32" height="20" viewBox="0 0 32 20" shape-rendering="crispEdges" aria-hidden="true"><g><rect class="h" x="3" y="3" width="2" height="2"/><rect class="h" x="6" y="3" width="2" height="2"/><rect class="h" x="12" y="3" width="2" height="2"/><rect class="h" x="15" y="3" width="2" height="2"/><rect class="h" x="0" y="6" width="2" height="2"/><rect class="h" x="3" y="6" width="2" height="2"/><rect class="b" x="6" y="6" width="2" height="2"/><rect class="b" x="9" y="6" width="2" height="2"/><rect class="b" x="12" y="6" width="2" height="2"/><rect class="b" x="15" y="6" width="2" height="2"/><rect class="b" x="18" y="6" width="2" height="2"/><rect class="b" x="0" y="9" width="2" height="2"/><rect class="g" x="3" y="9" width="2" height="2"/><rect class="b" x="6" y="9" width="2" height="2"/><rect class="b" x="9" y="9" width="2" height="2"/><rect class="e" x="12" y="9" width="2" height="2"/><rect class="e" x="15" y="9" width="2" height="2"/><rect class="b" x="18" y="9" width="2" height="2"/><rect class="b" x="0" y="12" width="2" height="2"/><rect class="b" x="3" y="12" width="2" height="2"/><rect class="b" x="6" y="12" width="2" height="2"/><rect class="b" x="9" y="12" width="2" height="2"/><rect class="b" x="12" y="12" width="2" height="2"/><rect class="b" x="15" y="12" width="2" height="2"/><rect class="b" x="18" y="12" width="2" height="2"/><rect class="b" x="3" y="15" width="2" height="2"/><rect class="t" x="6" y="15" width="2" height="2"/><rect class="t" x="9" y="15" width="2" height="2"/><rect class="t" x="12" y="15" width="2" height="2"/><rect class="b" x="15" y="15" width="2" height="2"/><rect class="b" x="6" y="18" width="2" height="2"/><rect class="b" x="9" y="18" width="2" height="2"/><rect class="b" x="12" y="18" width="2" height="2"/></g><g></g><g><rect class="z" x="24" y="0" width="2" height="2"/><rect class="z" x="27" y="0" width="2" height="2"/><rect class="z" x="30" y="0" width="2" height="2"/><rect class="z" x="27" y="3" width="2" height="2"/><rect class="z" x="24" y="6" width="2" height="2"/><rect class="z" x="27" y="6" width="2" height="2"/><rect class="z" x="30" y="6" width="2" height="2"/></g></svg><div class="t">Codex usage credits</div></div>
+      <div class="s-row is-idle"><svg class="cr is-quiet" style="--cr-hue: var(--cr-claude-quiet)" width="32" height="20" viewBox="0 0 32 20" shape-rendering="crispEdges" aria-hidden="true"><g><rect class="h" x="3" y="6" width="2" height="2"/><rect class="b" x="6" y="6" width="2" height="2"/><rect class="b" x="9" y="6" width="2" height="2"/><rect class="b" x="12" y="6" width="2" height="2"/><rect class="b" x="15" y="6" width="2" height="2"/><rect class="e" x="3" y="9" width="2" height="2"/><rect class="e" x="6" y="9" width="2" height="2"/><rect class="b" x="9" y="9" width="2" height="2"/><rect class="e" x="12" y="9" width="2" height="2"/><rect class="e" x="15" y="9" width="2" height="2"/><rect class="b" x="0" y="12" width="2" height="2"/><rect class="b" x="3" y="12" width="2" height="2"/><rect class="b" x="6" y="12" width="2" height="2"/><rect class="b" x="9" y="12" width="2" height="2"/><rect class="b" x="12" y="12" width="2" height="2"/><rect class="b" x="15" y="12" width="2" height="2"/><rect class="b" x="18" y="12" width="2" height="2"/><rect class="b" x="3" y="15" width="2" height="2"/><rect class="b" x="6" y="15" width="2" height="2"/><rect class="b" x="9" y="15" width="2" height="2"/><rect class="b" x="12" y="15" width="2" height="2"/><rect class="b" x="15" y="15" width="2" height="2"/></g><g><rect class="s" x="3" y="18" width="2" height="2"/><rect class="s" x="9" y="18" width="2" height="2"/><rect class="s" x="15" y="18" width="2" height="2"/></g><g><rect class="z" x="24" y="0" width="2" height="2"/><rect class="z" x="27" y="0" width="2" height="2"/><rect class="z" x="30" y="0" width="2" height="2"/><rect class="z" x="27" y="3" width="2" height="2"/><rect class="z" x="24" y="6" width="2" height="2"/><rect class="z" x="27" y="6" width="2" height="2"/><rect class="z" x="30" y="6" width="2" height="2"/></g></svg><div class="t">Dashboard as MCP</div></div>
+    </section>
+  </div>
+
+  <button class="new">
+    <svg class="i" width="16" height="16" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg>
+    New session<kbd>⌘N</kbd>
+  </button>
+</nav>
+
+<!-- ======================= chat ======================= -->
+<main class="desk">
+  <div class="thread">
+    <div class="col">
+      <div class="day">Today 17:56</div>
+
+      <div class="you">Enable deletion approvals on Hostly and restart the API so it takes effect.</div>
+
+      <div class="who"><svg class="cr" style="--cr-hue: var(--cr-claude)" width="32" height="20" viewBox="0 0 32 20" shape-rendering="crispEdges" aria-hidden="true"><g><rect class="h" x="3" y="6" width="2" height="2"/><rect class="b" x="6" y="6" width="2" height="2"/><rect class="b" x="9" y="6" width="2" height="2"/><rect class="b" x="12" y="6" width="2" height="2"/><rect class="b" x="15" y="6" width="2" height="2"/><rect class="b" x="3" y="9" width="2" height="2"/><rect class="e" x="6" y="9" width="2" height="2"/><rect class="b" x="9" y="9" width="2" height="2"/><rect class="e" x="12" y="9" width="2" height="2"/><rect class="b" x="15" y="9" width="2" height="2"/><rect class="b" x="0" y="12" width="2" height="2"/><rect class="b" x="3" y="12" width="2" height="2"/><rect class="b" x="6" y="12" width="2" height="2"/><rect class="b" x="9" y="12" width="2" height="2"/><rect class="b" x="12" y="12" width="2" height="2"/><rect class="b" x="15" y="12" width="2" height="2"/><rect class="b" x="18" y="12" width="2" height="2"/><rect class="b" x="21" y="12" width="2" height="2"/><rect class="b" x="24" y="12" width="2" height="2"/><rect class="b" x="27" y="12" width="2" height="2"/><rect class="b" x="3" y="15" width="2" height="2"/><rect class="b" x="6" y="15" width="2" height="2"/><rect class="b" x="9" y="15" width="2" height="2"/><rect class="b" x="12" y="15" width="2" height="2"/><rect class="b" x="15" y="15" width="2" height="2"/></g><g><rect class="s" x="3" y="18" width="2" height="2"/><rect class="s" x="9" y="18" width="2" height="2"/><rect class="s" x="15" y="18" width="2" height="2"/></g><g><rect class="a" x="24" y="0" width="2" height="2"/><rect class="a" x="27" y="0" width="2" height="2"/><rect class="a" x="30" y="0" width="2" height="2"/><rect class="a" x="24" y="3" width="2" height="2"/><rect class="a" x="27" y="3" width="2" height="2"/><rect class="a" x="30" y="3" width="2" height="2"/><rect class="p" x="27" y="6" width="2" height="2"/><rect class="p" x="27" y="9" width="2" height="2"/></g></svg><b>Claude</b><span>17:57</span></div>
+
+      <button class="thought">
+        <svg class="i" width="16" height="16" viewBox="0 0 16 16"><path d="M6.5 4.5 10 8l-3.5 3.5"/></svg>
+        Thought for 6s
+      </button>
+
+      <div class="reply">
+        <p>Deletion approvals are switched by <code>DELETE_APPROVAL</code> in the API's env file on Hostly. It was set to 0, so accounts were deleted the moment someone asked.</p>
+        <p>I've turned it on. The API only reads that file when it starts, so it needs a restart; open connections drop for a second or two.</p>
+      </div>
+
+      <div class="log">
+        <div class="tool">
+          <svg class="i chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6.5 4.5 10 8l-3.5 3.5"/></svg>
+          <span class="name">Read</span><span class="target">deploy/api.env</span><span class="m">23 lines</span>
+        </div>
+        <div class="tool is-selected">
+          <svg class="i chev" width="16" height="16" viewBox="0 0 16 16"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg>
+          <span class="name">Edit</span><span class="target">deploy/api.env</span><span class="m"><span class="plus">+1</span><span class="minus">−1</span></span>
+        </div>
+        <div class="diff">
+          <div class="ln"><span class="no">12</span><span class="sg"> </span><span>ACCOUNT_DELETION=enabled</span></div>
+          <div class="ln del"><span class="no">13</span><span class="sg">−</span><span>DELETE_APPROVAL=0</span></div>
+          <div class="ln add"><span class="no">13</span><span class="sg">+</span><span>DELETE_APPROVAL=1</span></div>
+          <div class="ln"><span class="no">14</span><span class="sg"> </span><span>DELETE_APPROVAL_TIMEOUT=72h</span></div>
+        </div>
+      </div>
+
+      <div class="ask" role="group" aria-label="Permission request">
+        <div class="tool">
+          <svg class="i chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6.5 4.5 10 8l-3.5 3.5"/></svg>
+          <span class="name">Bash</span><span class="target">ssh hostly systemctl restart api</span>
+          <span class="m"><i class="dot needs"></i>waiting for you</span>
+        </div>
+        <div class="ask-body">
+          <h3>Allow this command?</h3>
+          <p>Runs on hostly over SSH and restarts the api service.</p>
+          <div class="ask-actions">
+            <button class="btn allow">Allow</button>
+            <button class="btn outline">Always allow</button>
+            <button class="btn ghost">Deny</button>
+            <span class="ask-keys"><kbd>↵</kbd><span>allow</span><kbd>esc</kbd><span>deny</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="composer-wrap">
+    <div class="col composer">
+      <div class="field">Message Claude…</div>
+      <div class="bar">
+        <button class="icon-btn" aria-label="Attach image">
+          <svg class="i" width="16" height="16" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="10" rx="2"/><circle cx="6" cy="6.5" r="1"/><path d="m13.5 10.5-3-3-6.5 5.5"/></svg>
+        </button>
+        <button class="picker push">Fable 5.2<svg class="i" width="12" height="12" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5l3-3"/></svg></button>
+        <button class="picker">Ask<svg class="i" width="12" height="12" viewBox="0 0 12 12"><path d="M3 4.5 6 7.5l3-3"/></svg></button>
+        <button class="send" aria-label="Send">
+          <svg class="i" width="16" height="16" viewBox="0 0 16 16" style="stroke-width: 1.75"><path d="M8 13V3.5M4 7.5l4-4 4 4"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ======================= preview pane ======================= -->
+<aside class="preview" aria-label="Preview">
+  <div class="tabs-row">
+    <div class="tabs" role="tablist">
+      <button class="tab is-on" role="tab" aria-selected="true">Live work</button>
+      <button class="tab" role="tab">Browser</button>
+    </div>
+    <button class="follow">Follow newest</button>
+  </div>
+
+  <div class="p-head"><h2>This turn</h2><span>3 calls</span></div>
+  <ol class="calls">
+    <li class="call">
+      <svg class="i ok" width="16" height="16" viewBox="0 0 16 16"><path d="m4 8.5 2.5 2.5L12 5.5"/></svg>
+      <span class="name">Read</span><span class="target">deploy/api.env</span><span class="m">23 lines</span>
+    </li>
+    <li class="call is-selected">
+      <svg class="i ok" width="16" height="16" viewBox="0 0 16 16"><path d="m4 8.5 2.5 2.5L12 5.5"/></svg>
+      <span class="name">Edit</span><span class="target">deploy/api.env</span><span class="m"><span class="plus">+1</span> <span class="minus">−1</span></span>
+    </li>
+    <li class="call">
+      <span class="wait"><i class="dot needs"></i></span>
+      <span class="name">Bash</span><span class="target">ssh hostly systemctl restart api</span><span class="m"></span>
+      <span class="sub">waiting for you</span>
+    </li>
+  </ol>
+
+  <section class="detail">
+    <div class="d-head"><span class="name">Edit</span><span class="target">deploy/api.env</span><span class="m"><span class="plus">+1</span> <span class="minus">−1</span></span></div>
+    <div class="hunk">@@ -1,23 +1,23 @@</div>
+    <div class="diff">
+      <div class="ln"><span class="no">1</span><span class="no">1</span><span class="sg"> </span><span># garden-sim api, hostly</span></div>
+      <div class="ln"><span class="no">2</span><span class="no">2</span><span class="sg"> </span><span>NODE_ENV=production</span></div>
+      <div class="ln"><span class="no">3</span><span class="no">3</span><span class="sg"> </span><span>API_HOST=0.0.0.0</span></div>
+      <div class="ln"><span class="no">4</span><span class="no">4</span><span class="sg"> </span><span>API_PORT=8080</span></div>
+      <div class="ln"><span class="no">5</span><span class="no">5</span><span class="sg"> </span><span>WORKERS=4</span></div>
+      <div class="ln"><span class="no">6</span><span class="no">6</span><span class="sg"> </span><span></span></div>
+      <div class="ln"><span class="no">7</span><span class="no">7</span><span class="sg"> </span><span>DATABASE_URL=postgres:///garden</span></div>
+      <div class="ln"><span class="no">8</span><span class="no">8</span><span class="sg"> </span><span>REDIS_URL=redis://localhost:6379/0</span></div>
+      <div class="ln"><span class="no">9</span><span class="no">9</span><span class="sg"> </span><span>SESSION_TTL=86400</span></div>
+      <div class="ln"><span class="no">10</span><span class="no">10</span><span class="sg"> </span><span></span></div>
+      <div class="ln"><span class="no">11</span><span class="no">11</span><span class="sg"> </span><span># Accounts</span></div>
+      <div class="ln"><span class="no">12</span><span class="no">12</span><span class="sg"> </span><span>ACCOUNT_DELETION=enabled</span></div>
+      <div class="ln del"><span class="no">13</span><span class="no"></span><span class="sg">−</span><span>DELETE_APPROVAL=0</span></div>
+      <div class="ln add"><span class="no"></span><span class="no">13</span><span class="sg">+</span><span>DELETE_APPROVAL=1</span></div>
+      <div class="ln"><span class="no">14</span><span class="no">14</span><span class="sg"> </span><span>DELETE_APPROVAL_TIMEOUT=72h</span></div>
+      <div class="ln"><span class="no">15</span><span class="no">15</span><span class="sg"> </span><span>DELETE_GRACE_DAYS=14</span></div>
+      <div class="ln"><span class="no">16</span><span class="no">16</span><span class="sg"> </span><span></span></div>
+      <div class="ln"><span class="no">17</span><span class="no">17</span><span class="sg"> </span><span># Mail</span></div>
+      <div class="ln"><span class="no">18</span><span class="no">18</span><span class="sg"> </span><span>MAIL_PROVIDER=postmark</span></div>
+      <div class="ln"><span class="no">19</span><span class="no">19</span><span class="sg"> </span><span>MAIL_QUEUE=deletions</span></div>
+      <div class="ln"><span class="no">20</span><span class="no">20</span><span class="sg"> </span><span></span></div>
+      <div class="ln"><span class="no">21</span><span class="no">21</span><span class="sg"> </span><span># Limits</span></div>
+      <div class="ln"><span class="no">22</span><span class="no">22</span><span class="sg"> </span><span>RATE_LIMIT_RPM=600</span></div>
+      <div class="ln"><span class="no">23</span><span class="no">23</span><span class="sg"> </span><span>LOG_LEVEL=info</span></div>
+    </div>
+    <div class="d-foot"><span>17:57 · applied</span><button class="d-act">Open in editor</button></div>
+  </section>
+</aside>
+
+</body>
+</html>

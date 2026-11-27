@@ -1,0 +1,16 @@
+{"method":"thread/status/changed","params":{"threadId":"cccccccc-0000-4000-8000-0000000000a1","status":{"type":"active","activeFlags":[]}}}
+{"method":"turn/started","params":{"threadId":"cccccccc-0000-4000-8000-0000000000a1","turn":{"id":"turn-a1","items":[],"itemsView":"notLoaded","status":"inProgress","error":null,"startedAt":1795000200,"completedAt":null,"durationMs":null}}}
+{"method":"item/started","params":{"item":{"type":"userMessage","id":"item-u9","clientId":"__CLIENT_ID__","content":[{"type":"text","text":"Say hello","text_elements":[]}]},"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","startedAtMs":1795000200100}}
+{"method":"item/completed","params":{"item":{"type":"userMessage","id":"item-u9","clientId":"__CLIENT_ID__","content":[{"type":"text","text":"Say hello","text_elements":[]}]},"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","completedAtMs":1795000200100}}
+{"method":"turn/moderationMetadata","params":{"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","metadata":{}}}
+{"method":"item/started","params":{"item":{"type":"reasoning","id":"item-r9","summary":[],"content":[]},"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","startedAtMs":1795000201000}}
+{"method":"item/reasoning/summaryTextDelta","params":{"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","itemId":"item-r9","delta":"Greeting ","summaryIndex":0}}
+{"method":"item/reasoning/summaryTextDelta","params":{"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","itemId":"item-r9","delta":"the owner.","summaryIndex":0}}
+{"method":"item/completed","params":{"item":{"type":"reasoning","id":"item-r9","summary":["Greeting the owner."],"content":[]},"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","completedAtMs":1795000202500}}
+{"method":"thread/tokenUsage/updated","params":{"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","tokenUsage":{"total":{"totalTokens":120,"inputTokens":100,"cachedInputTokens":0,"outputTokens":20,"reasoningOutputTokens":5}}}}
+{"method":"item/started","params":{"item":{"type":"agentMessage","id":"item-a9","text":"","phase":"final_answer","memoryCitation":null},"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","startedAtMs":1795000203000}}
+{"method":"item/agentMessage/delta","params":{"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","itemId":"item-a9","delta":"Hel"}}
+{"method":"item/agentMessage/delta","params":{"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","itemId":"item-a9","delta":"lo"}}
+{"method":"item/completed","params":{"item":{"type":"agentMessage","id":"item-a9","text":"Hello","phase":"final_answer","memoryCitation":null},"threadId":"cccccccc-0000-4000-8000-0000000000a1","turnId":"turn-a1","completedAtMs":1795000203400}}
+{"method":"thread/status/changed","params":{"threadId":"cccccccc-0000-4000-8000-0000000000a1","status":{"type":"idle"}}}
+{"method":"turn/completed","params":{"threadId":"cccccccc-0000-4000-8000-0000000000a1","turn":{"id":"turn-a1","items":[],"itemsView":"notLoaded","status":"completed","error":null,"startedAt":1795000200,"completedAt":1795000204,"durationMs":3400}}}

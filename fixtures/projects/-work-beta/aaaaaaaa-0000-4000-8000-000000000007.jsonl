@@ -1,0 +1,5 @@
+{"type":"user","isSidechain":false,"gitBranch":"main","message":{"role":"user","content":"Check two invented things again."}}
+{"type":"assistant","isSidechain":false,"gitBranch":"main","message":{"id":"msg_par2","role":"assistant","model":"claude-invented-1","content":[{"type":"tool_use","id":"toolu_par_c","name":"Bash","input":{"command":"ls"}}]}}
+{"type":"assistant","isSidechain":false,"gitBranch":"main","message":{"id":"msg_par2","role":"assistant","model":"claude-invented-1","content":[{"type":"tool_use","id":"toolu_par_d","name":"Read","input":{"file_path":"/work/beta/b.txt"}}]}}
+{"type":"user","isSidechain":false,"gitBranch":"main","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_par_c","content":"invented result"}]}}
+{"type":"user","isSidechain":false,"gitBranch":"main","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_par_d","content":"invented result"}]}}

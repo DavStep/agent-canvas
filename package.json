@@ -1,0 +1,55 @@
+{
+  "name": "agent-canvas",
+  "version": "0.1.1",
+  "private": true,
+  "description": "A Mac app showing Claude Code sessions and Codex chats on one canvas",
+  "main": "dist-electron/main.js",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node --import tsx scripts/dev.ts",
+    "app": "npm run build && electron dist-electron/main.js",
+    "build": "vite build && node --import tsx scripts/build-electron.ts",
+    "package": "npm run build && node -e \"require('electron')\" && electron-builder --mac --arm64 --config electron-builder.yml",
+    "install-app": "node --import tsx scripts/install-app.ts",
+    "icon": "node --import tsx scripts/make-icon.ts",
+    "test": "vitest run",
+    "test:e2e": "npm run build && playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "electron": "^45.4.1",
+    "electron-builder": "26.18.0",
+    "esbuild": "^0.28.2",
+    "jsdom": "31.0.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "2.12.0",
+    "@anthropic-ai/claude-agent-sdk": "0.3.330",
+    "@fontsource/geist-mono": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "diff": "^9.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "^0.187.0",
+    "zod": "^4.6.7"
+  },
+  "license": "MIT",
+  "author": "Davit Stepanyan",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DavStep/agent-canvas.git"
+  }
+}

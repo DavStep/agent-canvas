@@ -1,0 +1,184 @@
+[
+ {
+  "type": "stream_event",
+  "event": {
+   "type": "message_start",
+   "message": {
+    "id": "msg_live04",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-demo-large",
+    "content": [],
+    "stop_reason": null,
+    "stop_sequence": null,
+    "usage": {
+     "input_tokens": 1,
+     "output_tokens": 0
+    }
+   }
+  },
+  "parent_tool_use_id": null,
+  "uuid": "cccccccc-2222-4000-8000-000000000031",
+  "session_id": "bbbbbbbb-0000-4000-8000-000000000001"
+ },
+ {
+  "type": "stream_event",
+  "event": {
+   "type": "content_block_start",
+   "index": 0,
+   "content_block": {
+    "type": "tool_use",
+    "id": "toolu_live02",
+    "name": "AskUserQuestion",
+    "input": {}
+   }
+  },
+  "parent_tool_use_id": null,
+  "uuid": "cccccccc-2222-4000-8000-000000000032",
+  "session_id": "bbbbbbbb-0000-4000-8000-000000000001"
+ },
+ {
+  "type": "stream_event",
+  "event": {
+   "type": "content_block_stop",
+   "index": 0
+  },
+  "parent_tool_use_id": null,
+  "uuid": "cccccccc-2222-4000-8000-000000000033",
+  "session_id": "bbbbbbbb-0000-4000-8000-000000000001"
+ },
+ {
+  "type": "assistant",
+  "message": {
+   "id": "msg_live04",
+   "type": "message",
+   "role": "assistant",
+   "model": "claude-demo-large",
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "toolu_live02",
+     "name": "AskUserQuestion",
+     "input": {
+      "questions": [
+       {
+        "question": "Which colour?",
+        "header": "Colour",
+        "multiSelect": false,
+        "options": [
+         {
+          "label": "Blue",
+          "description": "Calm"
+         },
+         {
+          "label": "Red",
+          "description": "Loud"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ],
+   "stop_reason": null,
+   "stop_sequence": null,
+   "usage": {
+    "input_tokens": 1,
+    "output_tokens": 1
+   }
+  },
+  "parent_tool_use_id": null,
+  "uuid": "cccccccc-2222-4000-8000-000000000034",
+  "session_id": "bbbbbbbb-0000-4000-8000-000000000001"
+ },
+ {
+  "type": "stream_event",
+  "event": {
+   "type": "message_delta",
+   "delta": {
+    "stop_reason": "end_turn",
+    "stop_sequence": null
+   },
+   "usage": {
+    "output_tokens": 5
+   }
+  },
+  "parent_tool_use_id": null,
+  "uuid": "cccccccc-2222-4000-8000-000000000035",
+  "session_id": "bbbbbbbb-0000-4000-8000-000000000001"
+ },
+ {
+  "type": "stream_event",
+  "event": {
+   "type": "message_stop"
+  },
+  "parent_tool_use_id": null,
+  "uuid": "cccccccc-2222-4000-8000-000000000036",
+  "session_id": "bbbbbbbb-0000-4000-8000-000000000001"
+ },
+ {
+  "fake": "canUseTool",
+  "toolName": "AskUserQuestion",
+  "input": {
+   "questions": [
+    {
+     "question": "Which colour?",
+     "header": "Colour",
+     "multiSelect": false,
+     "options": [
+      {
+       "label": "Blue",
+       "description": "Calm"
+      },
+      {
+       "label": "Red",
+       "description": "Loud"
+      }
+     ]
+    }
+   ]
+  },
+  "options": {
+   "toolUseID": "toolu_live02"
+  }
+ },
+ {
+  "type": "user",
+  "message": {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_live02",
+     "content": "User has answered your questions: \"Which colour?\"=\"Blue\".",
+     "is_error": false
+    }
+   ]
+  },
+  "parent_tool_use_id": null,
+  "uuid": "cccccccc-2222-4000-8000-000000000037",
+  "session_id": "bbbbbbbb-0000-4000-8000-000000000001"
+ },
+ {
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "result": "Blue it is.",
+  "duration_ms": 900,
+  "duration_api_ms": 800,
+  "num_turns": 1,
+  "stop_reason": "end_turn",
+  "total_cost_usd": 0.01,
+  "usage": {
+   "input_tokens": 1,
+   "output_tokens": 5
+  },
+  "modelUsage": {},
+  "permission_denials": [],
+  "queued_turn_count": 0,
+  "terminal_reason": "completed",
+  "parent_tool_use_id": null,
+  "uuid": "cccccccc-2222-4000-8000-000000000038",
+  "session_id": "bbbbbbbb-0000-4000-8000-000000000001"
+ }
+]

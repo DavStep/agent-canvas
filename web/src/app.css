@@ -1,0 +1,478 @@
+/* Component styles, ported from mockups/nightdesk-v2.html. Mockup-only position classes
+   (.z-garden and friends) became generic zone and column rules; additions are marked. */
+
+/* ---------- page grid (the mockup's body grid) ---------- */
+/* Change (desktop): the detail panel is gone (a card opens its chat), so the canvas takes the
+   whole width. An open chat is docked right of the canvas as a panel (chat.css), and the canvas
+   narrows to make room; the panel's width comes from --panel-w, kept between 380 px and what
+   leaves the canvas 320 px (with its 8 px gutters). While the chat is full screen the canvas
+   stays laid out underneath, unseen and inert. The minimum width is the window's own. */
+/* The panel's column is always there, as wide as the panel is open (--panel-open, 0 to 1: a
+   number motion.css can ease, so the canvas narrows and widens with it). The panel itself keeps
+   its full width throughout (chat.css) and is clipped by the page while its column is narrower,
+   which is what slides it in from the edge; clip, not hidden, so nothing focused in it can ever
+   scroll the page sideways. */
+.app {
+  display: grid; grid-template-rows: 44px 64px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) calc(var(--panel-open) * (clamp(380px, var(--panel-w), 100% - 344px) + 8px));
+  /* No floor of its own: the window's minimum is in screen points, and a page zoomed in (⌘+) has
+     fewer CSS pixels than that, so a fixed min-width here pushed the right side out of the window. */
+  height: 100%; min-width: 0; overflow-x: clip;
+}
+.app.has-panel { --panel-open: 1; }
+/* The canvas side of the page: its own box for inert, laid out in the page's grid. */
+.app-under { display: contents; }
+.app .workspace { margin-right: 8px; }
+.app.is-under > .app-under { visibility: hidden; }
+
+/* ---------- top bar (outer room) ---------- */
+.topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 0 16px 0 20px; min-width: 0; }
+/* Addition (desktop app): the top bar is the window's title bar, so it leaves room for the
+   traffic lights and drags the window everywhere but its controls. */
+.desktop .topbar { padding-left: 88px; -webkit-app-region: drag; user-select: none; }
+.desktop .topbar .tools { -webkit-app-region: no-drag; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+.sp.mark { display: block; }
+.sp.mark .b, .sp.mark .s, .sp.mark .h { fill: var(--foreground); }
+.sp.mark .e { fill: var(--sidebar); }
+.counts { display: flex; align-items: center; gap: 8px; padding-left: 16px; border-left: 1px solid var(--border); height: 16px; font-size: 12px; line-height: 16px; color: var(--muted); white-space: nowrap; }
+.counts .sep { color: var(--chart-quiet); }
+.counts .wait { display: inline-flex; align-items: center; gap: 6px; color: var(--foreground); font-weight: 500; }
+.counts .wait i { width: 7px; height: 7px; border-radius: 50%; background: var(--orb-warning); }
+/* Addition: the reader is unreachable. A hollow dot, so it reads apart from the amber "need you". */
+.conn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--foreground); white-space: nowrap; }
+.conn i { width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--muted); }
+/* A usage limit holds sessions: the soonest reset, in the calm interrupted red; gone on reset. */
+.limit-note { display: inline-flex; align-items: center; gap: 6px; height: 24px; margin-left: 10px; padding: 0 8px; border: 1px solid var(--interrupt-edge); border-radius: 999px;
+  background: var(--interrupt-fill); color: var(--interrupt-ink); font: 500 12px/16px var(--font-mono); white-space: nowrap; cursor: pointer; }
+.limit-note:hover { border-color: var(--interrupt-ink); }
+.limit-note:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.limit-note i { display: inline-grid; place-items: center; width: 12px; height: 12px; border-radius: 50%; background: var(--interrupt-ink); color: var(--background); font: 700 9px/1 var(--font-sans); font-style: normal; }
+.tools { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.jump { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: clamp(180px, 20vw, 248px); height: 30px; margin-right: 12px; padding: 0 6px 0 12px;
+  border: 1px solid var(--card-border); border-radius: var(--radius-control); background: transparent; color: var(--muted); font-size: 12px;
+  transition: border-color 160ms var(--ease-out), color 160ms var(--ease-out); }
+.jump:hover { border-color: var(--control-border); color: var(--foreground); }
+.jump kbd { font: 500 11px/16px var(--font-mono); padding: 0 5px; border-radius: 5px; border: 1px solid var(--card-border); background: var(--panel); color: var(--muted); }
+.tool { height: 28px; padding: 0 8px; border: 0; white-space: nowrap; border-radius: var(--radius-control); background: transparent; color: var(--muted); font-size: 12px; }
+.tool:hover { background: var(--row-hover); color: var(--foreground); }
+.tool.mono { font-size: 11px; }
+.tool.is-open { background: var(--row-hover); color: var(--foreground); }
+/* A narrow page (a small window, or one zoomed in, which has fewer CSS pixels than the window has
+   points): the counts give way first, then the search box, and the key hints go, so every control
+   stays inside the window. */
+.brand { flex: none; }
+.counts { min-width: 0; overflow: hidden; flex-shrink: 1000; }
+.tools { min-width: 0; }
+.tools > :not(.jump) { flex: none; }
+.topbar .jump { flex: 0 1 auto; min-width: 72px; overflow: hidden; white-space: nowrap; }
+@media (max-width: 1180px) {
+  .topbar { gap: 10px; }
+  .topbar .jump { width: 160px; }
+}
+@media (max-width: 1000px) { .topbar .tool kbd, .topbar .jump kbd { display: none; } }
+
+/* ---------- jump box and zones menu (addition, Task 7) ---------- */
+.menu-wrap { position: relative; }
+.menu { position: absolute; top: calc(100% + 6px); z-index: 20; padding: 4px; border: 1px solid var(--card-border); border-radius: 10px;
+  background: var(--panel); box-shadow: var(--lift-shadow); }
+.jump-dialog { position: fixed; inset: clamp(48px, 21vh, 180px) 0 auto; margin: 0 auto; width: min(620px, calc(100vw - 40px));
+  max-height: 74vh; padding: 0; overflow: hidden; -webkit-app-region: no-drag; color: var(--foreground);
+  border: 1px solid var(--control-border); border-radius: 16px; background: var(--panel); box-shadow: 0 20px 64px #0008; }
+.jump-dialog::backdrop { background: rgb(0 0 0 / 32%); }
+.jump-field { display: flex; align-items: center; gap: 14px; padding: 0 18px; height: 64px; border-bottom: 1px solid var(--border); }
+.jump-field .card-icon { width: 23px; height: 23px; color: var(--muted); }
+.jump-input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; color: var(--foreground);
+  font: 400 22px/30px var(--font-sans); }
+.jump-input::placeholder { color: var(--muted); }
+.jump-dismiss, .jump-footer kbd { border: 1px solid var(--control-border); border-radius: 4px; padding: 1px 5px;
+  background: transparent; color: var(--muted); font: 400 11px/16px var(--font-mono); }
+.jump-dismiss:hover { color: var(--foreground); background: var(--row-hover); }
+.jump-list { max-height: min(350px, calc(74vh - 108px)); overflow-y: auto; overscroll-behavior: contain; padding: 6px; list-style: none; }
+.jump-hit { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center;
+  column-gap: 10px; height: 40px; padding: 0 10px; border-radius: 8px; font-size: 14px; line-height: 18px; }
+.jump-hit .zone-mark { justify-self: center; }
+.jump-hit .cr { justify-self: center; }
+.jump-hit.is-active { background: var(--accent); }
+.jump-hit .t, .jump-hit .f { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jump-hit .f { max-width: 160px; font: 400 11px/16px var(--font-mono); color: var(--muted); }
+.jump-footer { display: flex; align-items: center; gap: 18px; height: 36px; padding: 0 16px; border-top: 1px solid var(--border);
+  color: var(--muted); font: 400 11px/16px var(--font-sans); }
+.jump-footer kbd { margin-right: 2px; }
+.jump-count { margin-left: auto; }
+.menu-empty { padding: 8px 10px; font: 400 11px/16px var(--font-mono); color: var(--muted); }
+.zones-menu { right: 0; width: 264px; }
+.menu-zones { max-height: 300px; overflow-y: auto; }
+.menu-row { display: flex; align-items: center; gap: 2px; }
+.menu-item { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; height: 30px; padding: 0 10px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--foreground); font-size: 12px; line-height: 16px; text-align: left; }
+.menu-item:hover { background: color-mix(in oklch, var(--foreground) 7%, var(--panel)); }
+.menu-item .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-item.del { flex: none; width: auto; color: var(--muted); opacity: 0; }
+.menu-row:hover .menu-item.del, .menu-item.del:focus-visible, .menu-row.is-removed .menu-item.del { opacity: 1; }
+.menu-item.del:hover { color: var(--pill-negative); }
+.menu-item.del.restore:hover { color: var(--foreground); }
+.menu-item.is-static, .menu-item.is-static:hover { background: transparent; color: var(--muted); cursor: default; }
+.menu-item.is-static .zone-mark { opacity: 0.5; }
+.menu-label { padding: 6px 10px 2px; font: 500 11px/16px var(--font-sans); color: var(--muted); }
+.menu-zones.is-removed { max-height: 160px; }
+.menu-sep { height: 1px; margin: 4px -4px; background: var(--border); }
+.menu-new { display: flex; gap: 6px; padding: 2px; }
+.menu-new input { flex: 1; min-width: 0; height: 28px; padding: 0 8px; border: 1px solid var(--control-border); border-radius: 6px;
+  background: var(--surface); color: var(--foreground); font-size: 12px; }
+.menu-new input::placeholder { color: var(--muted); }
+.menu-btn { flex: none; height: 28px; padding: 0 10px; border: 1px solid var(--control-border); border-radius: 6px; background: transparent; color: var(--foreground); font-size: 12px; font-weight: 500; }
+.menu-btn:hover { background: var(--row-hover); }
+.menu-btn.danger { border-color: transparent; background: var(--pill-negative); color: var(--pill-negative-ink); }
+.menu-btn.danger:hover { background: color-mix(in oklch, var(--pill-negative) 88%, white); }
+.zone-menu { position: fixed; top: 0; z-index: 40; width: 264px; }
+.zone-menu:has(.zone-form) { width: 296px; }
+.zone-form { display: grid; gap: 12px; padding: 10px; }
+.zone-form h2 { font-size: 14px; line-height: 20px; font-weight: 600; }
+.zone-form fieldset { min-width: 0; border: 0; }
+.zone-field, .zone-form legend { font-size: 11px; font-weight: 500; color: var(--muted); }
+.zone-form legend { margin-bottom: 5px; }
+.zone-field { display: grid; gap: 4px; }
+.zone-name-field, .zone-hex { background: var(--surface); border: 1px solid var(--control-border); border-radius: 6px; }
+.zone-name-field { display: flex; align-items: center; gap: 8px; padding: 0 8px; }
+.zone-name-field:focus-within { border-color: var(--ring); }
+.zone-name-field input { width: 100%; min-width: 0; height: 30px; border: 0; background: transparent; outline: none; color: var(--foreground); font: 13px var(--font-sans); }
+.zone-colors, .zone-icons { display: flex; align-items: center; justify-content: space-between; }
+.zone-swatch, .zone-choice { position: relative; cursor: pointer; }
+.zone-swatch { width: 20px; height: 20px; border: 3px solid var(--panel); border-radius: 50%; }
+.zone-swatch:has(:checked) { outline: 1px solid var(--foreground); }
+.zone-choice { display: grid; place-items: center; width: 29px; height: 30px; border: 1px solid transparent; border-radius: 6px; }
+.zone-choice .zone-mark { color: var(--muted); }
+.zone-choice:has(:checked) { background: var(--surface); border-color: var(--control-border); }
+.zone-choice:has(:checked) .zone-mark { color: var(--zone-hue); }
+.zone-choice:hover { background: var(--accent); }
+.zone-colors input[type=radio], .zone-icons input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.zone-form label:has(input[type=radio]:focus-visible) { outline: 2px solid var(--ring); outline-offset: 2px; }
+.zone-hex { width: 73px; height: 26px; text-align: center; font: 11px var(--font-mono); color: var(--foreground); }
+.zone-hex[aria-invalid=true] { border-color: var(--pill-negative); }
+.zone-form footer { display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--border); padding-top: 10px; }
+.zone-remove { margin-right: auto; border: 0; background: transparent; font-size: 12px; color: var(--muted); }
+.zone-remove:hover, .zone-form [role=alert] { color: var(--pill-negative); }
+.zone-form .zone-save { background: var(--foreground); color: var(--surface); }
+.zone-save:disabled { opacity: .45; }
+.menu-confirm { padding: 8px 10px; }
+.menu-confirm p { font-size: 12px; line-height: 16px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.menu-confirm div { display: flex; gap: 6px; margin-top: 8px; }
+
+/* A change that can still be taken back: one quiet bar at the foot of the canvas. */
+.undo-toast { position: absolute; left: 50%; bottom: 16px; z-index: 30; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border: 1px solid var(--card-border); border-radius: 10px;
+  background: var(--panel); box-shadow: var(--lift-shadow); font-size: 12px; line-height: 16px; color: var(--foreground); white-space: nowrap; }
+.undo-toast .menu-btn { display: inline-flex; align-items: center; gap: 6px; }
+.undo-toast kbd { font: 500 11px/14px var(--font-mono); color: var(--muted); }
+.undo-close { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); }
+.undo-close:hover { background: var(--row-hover); color: var(--foreground); }
+.undo-close path { stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; fill: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .undo-toast { animation: toast-in 160ms var(--ease-out); }
+}
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 6px); } }
+
+/* Waiting requests */
+.brief { grid-column: 1 / -1; align-self: start; height: 56px; margin: 0 8px; padding: 4px;
+  display: flex; align-items: stretch; min-width: 0; border: 1px solid var(--border);
+  border-radius: var(--radius-card); background: var(--surface); }
+.brief h2 { flex: none; display: flex; align-items: center; gap: 8px; margin: 4px 0; padding: 0 16px 0 8px;
+  border-right: 1px solid var(--border); font-size: 13px; font-weight: 600; }
+.brief h2 span { padding: 1px 5px; border-radius: 4px; color: var(--orb-warning);
+  background: color-mix(in oklch, var(--orb-warning) 10%, transparent); font: 500 11px/16px var(--font-mono); }
+.orb { flex: none; }
+.orb rect { fill: var(--orb-ink); }
+.orb rect.spark { fill: var(--orb-warning); }
+.brief-requests { flex: 1; display: flex; min-width: 0; gap: 4px; margin-left: 4px; }
+.brief-tag { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left;
+  border: 1px solid transparent; border-radius: 8px; padding: 2px 12px; background: var(--panel); }
+.brief-tag:hover, .brief-tag:focus-visible { border-color: var(--needs-edge); background: var(--needs-fill); }
+.brief-icon { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 7px;
+  color: var(--orb-warning); background: color-mix(in oklch, var(--orb-warning) 8%, var(--panel)); }
+.brief-icon svg { width: 16px; height: 16px; }
+.brief-tag.is-done:hover, .brief-tag.is-done:focus-visible { border-color: var(--done-edge); background: var(--done-fill); }
+.brief-tag.is-done .brief-icon { color: var(--live); background: color-mix(in oklch, var(--live) 8%, var(--panel)); }
+.brief-tag.is-done .brief-lines b { color: var(--done-ink); }
+.brief h2 .brief-done { color: var(--live); background: color-mix(in oklch, var(--live) 10%, transparent); }
+.brief-lines { flex: 1; display: grid; min-width: 0; gap: 2px; }
+.brief-lines strong, .brief-detail { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brief-lines strong { font: 550 12px/16px var(--font-sans); color: var(--foreground); }
+.brief-lines > span { display: flex; align-items: baseline; min-width: 0; gap: 7px; font: 400 11px/14px var(--font-sans); }
+.brief-lines b { flex: none; font-weight: 500; color: var(--needs-ink); }
+.brief-detail, .brief-tag small, .brief-empty, .brief-pages { color: var(--muted); }
+.brief-detail::before { content: '·'; margin-right: 7px; }
+.brief-tag small, .brief-pages span { font: 400 11px/16px var(--font-mono); }
+.brief-pages { display: flex; align-items: center; gap: 3px; padding-left: 6px; }
+.brief-pages button { width: 26px; height: 28px; border: 0; border-radius: 6px; background: transparent; font-size: 18px; }
+.brief-pages button:enabled:hover { background: var(--panel); color: var(--foreground); }
+.brief-pages button:disabled { opacity: .3; }
+.brief-empty { align-self: center; padding: 0 16px; font-size: 12px; }
+
+/* ---------- workspace canvas ---------- */
+.workspace { anchor-name: --canvas-workspace; grid-column: 1; grid-row: 3; position: relative; overflow: hidden; margin: 0 0 8px 8px; user-select: none; touch-action: none; overscroll-behavior: none;
+  background-color: var(--background); border: 1px solid var(--card-border); border-radius: var(--radius-card); }
+.workspace-grid { position: absolute; inset: 0 -40px -40px 0; pointer-events: none; will-change: transform; transform-origin: 0 0;
+  background-image: radial-gradient(circle at 1px 1px, var(--grid-dot) 1px, transparent 1.4px); background-size: 20px 20px; }
+/* The board is the canvas origin; the view moves it with one translate-and-scale transform. */
+.board { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; transition: opacity 240ms var(--ease-out); }
+/* Reuse painted board tiles during a gesture, then rasterize text at the settled scale. */
+.workspace.is-navigating .board { will-change: transform; }
+/* Addition (Task 7): while something is dragged the pointer says so everywhere on the board. */
+.board.is-dragging, .board.is-dragging * { cursor: grabbing; }
+/* Holding Space: the whole canvas, cards and labels too, is a handle for the view. */
+.workspace.is-space-pan, .workspace.is-space-pan * { cursor: grab; }
+.workspace.is-space-pan.is-panning, .workspace.is-space-pan.is-panning * { cursor: grabbing; }
+/* Addition: the one quiet line on an empty canvas. */
+.canvas-hint { position: absolute; inset: 0; display: grid; place-items: center; font: 400 12px/16px var(--font-mono); color: var(--muted); }
+
+/* The zone label carries the project color over a neutral surface. */
+.zone { position: absolute; min-width: 264px; min-height: 96px; padding: 40px 16px 16px; border-radius: var(--radius-card); }
+.zone::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.zone.is-unplaced { visibility: hidden; }
+/* Addition (Task 7): zones sit at the board origin and are placed by transform; a zone moved
+   aside by a grown neighbour (or returning) glides, except while anything is being dragged. */
+.zone { left: 0; top: 0; transition: translate 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
+.board.is-dragging .zone { transition: none; }
+/* Addition: with "Snap to grid" on, the dragged zone hops from cell to cell with a quick glide. */
+@media (prefers-reduced-motion: no-preference) {
+  .board.is-dragging.is-snapping .zone.is-moving { transition: translate 70ms var(--ease-out); }
+}
+/* Addition (Task 8): a zone takes its first position without gliding in from the origin. The
+   transition that applies is the one after the change, so the first placed frame has none too. */
+.zone.is-unplaced, .zone.is-placing { transition: none; }
+.zone.is-lifted { z-index: 3; }
+/* Addition (Task 7): a zone being dragged rides above the rest; a zone a card is dragged over is ringed. */
+.zone.is-moving { z-index: 2; }
+.zone.is-moving::after { box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--zone-hue) 40%, var(--card-border)), var(--lift-shadow); }
+.zone.is-drop::after { box-shadow: inset 0 0 0 2px var(--highlight); background: color-mix(in oklch, var(--highlight) 6%, var(--surface)); }
+.zone-label { position: absolute; top: 12px; left: 16px; right: 16px; display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--nav-ink);
+  cursor: grab; border-radius: 4px; }
+.zone-mark { display: block; flex: none; width: 16px; height: 16px; color: var(--zone-hue); }
+.zone-edit { flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin: -4px; border: 0; border-radius: 5px; background: transparent; cursor: pointer; }
+.zone-edit:hover { background: var(--accent); }
+.zone-label .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zone-label .n { flex: none; margin-left: auto; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; transition: color 120ms var(--ease-out); }
+/* The count, folder and "+" are one quiet group: always shown in muted ink, full ink while the zone is hovered or focused. */
+:is(.zone:hover, .zone-label:focus-within) > .zone-label :is(.n, .zone-files:not([aria-pressed="true"]), .zone-new),
+.zone-label :is(.zone-files, .zone-new):focus-visible { color: var(--foreground); }
+.zone-rename { flex: 1; min-width: 0; height: 22px; margin: -3px 0; padding: 0 6px; border: 1px solid var(--control-border); border-radius: 6px;
+  background: var(--panel); color: var(--foreground); font: 500 12px/16px var(--font-sans); }
+.zone-rename:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.zone .cards { display: flex; gap: 12px; align-items: flex-start; }
+.zone .col { display: flex; flex-direction: column; gap: 12px; width: 232px; }
+/* The open board preview takes a slot among the cards (canvas/zoneFlow.ts): it sits at the cards
+   area's corner (its static place) and its translate puts it in its slot; the columns keep room
+   for it. While it is in the hand a dashed slot shows where it lands. */
+.zone .board-tile { position: absolute; z-index: 2; }
+.zone .board-tile-slot { position: absolute; z-index: 1; pointer-events: none; border: 1px dashed var(--highlight); border-radius: var(--radius-card);
+  background: color-mix(in oklch, var(--highlight) 6%, transparent); }
+.zone .board-tile-room { flex: none; }
+
+/* ---------- search: what the search box finds is lit, the rest of the board steps back ---------- */
+.board.is-searching .card:not(.is-hit) { opacity: 0.26; }
+.board.is-searching .zone:not(.is-hit):not(:has([data-card-id].is-hit)) { opacity: 0.4; }
+.board.is-searching .zone:not(.is-hit) > .zone-label { opacity: 0.6; }
+.zone.is-hit::after { box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--zone-hue) 70%, var(--card-border)); }
+.zone.is-hit > .zone-label .name { color: var(--foreground); }
+/* The match the arrows are on (Enter goes there): a plain ring, apart from the selection's colour. */
+.card.is-hit-active { outline: 2px solid color-mix(in oklch, var(--foreground) 72%, transparent); outline-offset: 3px; }
+.zone.is-hit-active::after { box-shadow: inset 0 0 0 2px var(--zone-hue), 0 0 0 2px color-mix(in oklch, var(--foreground) 60%, transparent); }
+
+/* ---------- cards ---------- */
+.card { position: relative; width: 232px; padding: 12px; border: 1px solid var(--card-border); border-radius: var(--radius-card);
+  background: var(--panel); box-shadow: var(--card-shadow); cursor: default;
+  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), border-color 180ms var(--ease-out), background-color 180ms var(--ease-out), opacity 180ms var(--ease-out); }
+.card:hover { border-color: var(--control-border); box-shadow: var(--lift-shadow); }
+.card-head { display: flex; align-items: flex-start; gap: 8px; min-height: 40px; }
+.title { flex: 1; min-width: 0; padding-top: 1px; font-size: 13px; line-height: 18px; font-weight: 500; color: var(--foreground); letter-spacing: -0.003em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.card-head .cr { margin-right: 4px; }
+.state { display: flex; align-items: center; gap: 8px; height: 22px; margin-top: 8px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--foreground); }
+.card-icon { flex: none; fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+.run-status { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; }
+.run-status .state { margin: 0; }
+.card-age, .card-fact { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+.card-age { margin-left: auto; flex: none; color: var(--muted); font: 400 11px/16px var(--font-mono); }
+.card-fact > span, .run-step > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* An ACP session's agent, named on its card: a quiet pill, as the other facts. */
+.card-agent { padding: 0 6px; border-radius: 999px; background: var(--row-hover); color: var(--muted); font-size: 11px; line-height: 18px; max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-facts { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid var(--border); font: 400 11px/16px var(--font-mono); color: var(--muted); }
+.run-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin-top: 8px; list-style: none; }
+.run-step { display: flex; align-items: baseline; gap: 6px; color: var(--muted); font: 400 12px/16px var(--font-sans); }
+.run-step .card-icon { align-self: flex-start; margin-top: 1px; }
+.run-step small { flex: none; margin-left: auto; font: 400 10px/16px var(--font-mono); }
+.run-step.is-current, .run-step.is-running { color: var(--nav-ink); }
+.run-step.is-current > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; overflow-wrap: anywhere; }
+.run-step.is-failed small, .is-needs .run-step.is-current .card-icon { color: var(--orb-warning); }
+
+.live { position: relative; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--live); }
+/* The pulse is a ring that grows from the dot's edge to 6 px beyond it and fades out. It moves by
+   transform and opacity only (no repaint); it lies over the dot in the dot's own colour, so the
+   dot looks unchanged. Not animated, it is invisible. 2.7143 = (7 + 2 × 6) / 7 px. */
+.live::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: color-mix(in oklch, var(--live) 60%, transparent);
+  opacity: 0; pointer-events: none; animation: live 2.4s var(--ease-out) infinite; }
+@keyframes live { 0% { transform: scale(1); opacity: 1; } 70%, 100% { transform: scale(2.7143); opacity: 0; } }
+
+.request-state { display: inline-flex; align-items: center; gap: 6px; color: var(--needs-ink); }
+.request-state .card-icon { color: var(--orb-warning); }
+
+/* Needs you: amber hairline and amber state line. Loudest thing on screen. */
+.card.is-needs { border-color: var(--needs-edge); background: var(--needs-fill); }
+.card.is-needs:hover { border-color: var(--orb-warning); }
+
+/* Done: finished, not opened yet. A green hairline and a check; opening the chat clears it. */
+.card.is-done { border-color: var(--done-edge); background: var(--done-fill); }
+.card.is-done:hover { border-color: var(--live); }
+.request-state.is-done { color: var(--done-ink); }
+.request-state.is-done .card-icon { color: var(--live); }
+
+/* Interrupted: its turn was cut off (a limit, an error, its process gone). A calm red hairline, no
+   glow; the state line's red "!" dot and words say what happened. */
+.card.is-interrupted { border-color: var(--interrupt-edge); background: var(--interrupt-fill); }
+.card.is-interrupted:hover { border-color: var(--interrupt-ink); }
+.request-state.is-interrupted { color: var(--interrupt-ink); }
+.is-interrupted .run-step.is-current .card-icon { color: var(--interrupt-ink); }
+.alert-dot { flex: none; display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--interrupt-ink); color: var(--background); font: 700 10px/1 var(--font-sans); font-style: normal; }
+.brief-tag.is-interrupted:hover, .brief-tag.is-interrupted:focus-visible { border-color: var(--interrupt-edge); background: var(--interrupt-fill); }
+.brief-tag.is-interrupted .brief-icon { color: var(--interrupt-ink); background: color-mix(in oklch, var(--interrupt-ink) 8%, var(--panel)); }
+.brief-tag.is-interrupted .brief-lines b { color: var(--interrupt-ink); }
+/* Ready to continue: the limit that cut it off has reset. Green and calm, a dot and the words. */
+.card.is-ready-continue { border-color: var(--ready-edge); background: var(--ready-fill); }
+.card.is-ready-continue:hover { border-color: var(--ready-ink); }
+.request-state.is-ready-continue { color: var(--ready-ink); }
+.ready-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ready-ink); }
+.brief-tag.is-ready-continue .brief-lines b { color: var(--ready-ink); }
+
+/* Idle: compact, recessed, quiet. Unknown cards share the idle density. */
+.card.is-idle { padding: 10px 12px; background: var(--idle-fill); border-color: color-mix(in oklch, var(--card-border) 80%, transparent); box-shadow: none; }
+.card.is-idle .card-head { min-height: 36px; }
+.card.is-idle .card-head .cr { margin-block: -2px -1px; }
+.card.is-idle .title { color: var(--ink-idle); }
+.card.is-idle:is(:hover, .is-selected) { background: var(--panel); box-shadow: var(--card-shadow); }
+.card.is-idle:is(:hover, .is-selected) .title { color: var(--foreground); }
+.meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; font: 400 11px/16px var(--font-mono); color: var(--muted); white-space: nowrap; }
+.meta .chip.raw { flex: 0 1 auto; }
+.meta .card-icon { width: 12px; height: 12px; }
+.chip { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--border);
+  font: 500 11px/16px var(--font-sans); color: var(--muted); }
+/* Addition: an unknown card's status as the app wrote it, beside "Unknown"; long values are cut. */
+.chip.raw { display: inline-block; flex: none; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 11px/18px var(--font-mono); }
+
+/* Addition (Task 7): a card being dragged follows the pointer directly, above every zone. */
+.card.is-dragging { z-index: 10; transition: none; box-shadow: var(--lift-shadow); border-color: var(--control-border); }
+
+/* Subagents */
+.subs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 12px -12px 0; padding: 12px 12px 0; border-top: 1px solid var(--border); }
+.sub-progress { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; gap: 5px; color: var(--muted); font: 500 11px/14px var(--font-sans); }
+.sub-progress span + span { font-family: var(--font-mono); font-weight: 400; }
+.sub-progress progress { appearance: none; grid-column: 1 / -1; width: 100%; height: 3px; border: 0; }
+.sub-progress progress::-webkit-progress-bar { border-radius: 2px; background: var(--border); }
+.sub-progress progress::-webkit-progress-value { border-radius: 2px; background: var(--live); }
+.sub { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.sub .cr { margin-left: -2px; }
+.sub-name { max-width: 100%; font-size: 12px; line-height: 16px; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub-state { display: flex; align-items: center; gap: 6px; font-size: 11px; line-height: 16px; color: var(--muted); }
+.sub-state svg { display: block; }
+.sub-state .tick { fill: none; stroke: var(--live); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.subs-more { grid-column: 1 / -1; font: 400 11px/16px var(--font-mono); color: var(--muted); }
+
+/* Provider portraits share the same footprint in every session state. */
+.cr { flex: none; display: block; position: relative; overflow: visible; }
+.cr-still { display: block; }
+.cr :is(.cr-still, .cr-gaze) { position: absolute; top: 0; left: -6%; width: 140%; height: 100%; pointer-events: none; }
+.cr[data-state="working"] :is(.cr-still, .cr-gaze) { left: -16%; }
+.cr.is-quiet :is(.cr-gaze, .cr-still) { filter: grayscale(1); opacity: .65; }
+:is(.card.is-selected > .card-head, .rail-row.is-selected) > .cr.is-quiet :is(.cr-gaze, .cr-still) { filter: none; opacity: 1; }
+/* A configured ACP agent with the generic icon: Claude's character in another colour. */
+.cr[data-variant="agent"] :is(.cr-gaze, .cr-still) { filter: hue-rotate(150deg) saturate(.8); }
+.cr[data-variant="agent"].is-quiet :is(.cr-gaze, .cr-still) { filter: grayscale(1); }
+:is(.card.is-selected > .card-head, .rail-row.is-selected) > .cr[data-variant="agent"].is-quiet :is(.cr-gaze, .cr-still) { filter: hue-rotate(150deg) saturate(.8); }
+.cr[data-provider="orchestrator"].is-quiet :is(.cr-gaze, .cr-still) { filter: saturate(.8); opacity: 1; }
+.cr-attention { position: absolute; top: 4%; right: 4%; width: max(3px, 12%); aspect-ratio: 1; border-radius: 50%; background: var(--orb-warning); }
+
+.bob { animation: bob 1.2s steps(1, end) infinite; }
+.blink { animation: blink 1s steps(1, end) infinite; }
+@keyframes bob { 0% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } }
+
+/* ---------- disconnected (addition) ---------- */
+/* While the reader is unreachable nothing on the canvas may look live: the board dims and
+   every live mark stops and turns grey until a fresh snapshot arrives. */
+.app.is-stale .board { opacity: 0.5; }
+.app.is-stale .live { background: var(--chart-quiet); }
+.app.is-stale .live::after { animation: none; }
+.app.is-stale .bob, .app.is-stale .blink { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bob, .blink, .live::after { animation: none; }
+  .card, .jump, .brief-tag, .board, .zone { transition: none; }
+}
+
+.working-count { background: transparent; border: 0; padding: 0; color: inherit; font: inherit; -webkit-app-region: no-drag; }
+.working-count:hover:enabled { color: var(--foreground); text-decoration: underline; }
+.running-sessions { position: fixed; inset: 48px 12px auto auto; margin: 0; width: 300px; max-height: 60vh; overflow: auto; padding: 12px; background: var(--panel); color: var(--foreground); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--card-shadow); -webkit-app-region: no-drag; }
+.running-sessions h2 { font-size: 13px; padding: 4px 8px 8px; }
+.running-sessions button { background: transparent; color: inherit; border: 0; display: grid; width: 100%; gap: 3px; padding: 7px 8px; text-align: left; border-radius: 6px; }
+.running-sessions button:hover { background: var(--row-hover); }
+.running-sessions strong, .running-sessions button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.running-sessions button span { color: var(--muted); }
+
+/* The first chat in a project has the same footprint as a session and takes its accent from the zone. */
+.project-chat-card { text-align: left; }
+.project-chat-card:not(.is-needs, .is-done, .is-selected) {
+  border-color: color-mix(in oklch, var(--zone-hue) 40%, var(--card-border));
+  background: linear-gradient(145deg, color-mix(in oklch, var(--zone-hue) 11%, var(--panel)), var(--panel) 75%);
+}
+.project-chat-excerpt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font: 400 12px/18px var(--font-sans); }
+
+/* ---------- card slots (web/src/canvas/cardSlots.ts): Tidy in the zone label, the "Earlier" fold ---------- */
+/* Tidy joins the label's quiet group: muted like Files and "+", full ink while the zone is hovered or focused. */
+.zone-tidy { flex: none; display: grid; place-items: center; width: 20px; height: 20px; margin: -2px -4px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--muted); cursor: pointer; }
+.zone-tidy svg.i { display: block; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.zone-tidy:hover { background: var(--row-hover); color: var(--foreground); }
+.zone-tidy:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+:is(.zone:hover, .zone-label:focus-within) > .zone-label .zone-tidy { color: var(--foreground); }
+.zone-tidy-action { border: 0; background: transparent; font-size: 12px; color: var(--muted); cursor: pointer; border-radius: 4px; }
+.zone-tidy-action:hover { color: var(--foreground); }
+.zone-tidy-action:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+/* Idle sessions untouched for a while, folded at the zone's end: a quiet row that opens to their cards. */
+.zone-earlier { margin-top: 12px; }
+.zone-earlier-toggle { display: flex; align-items: center; gap: 6px; height: 24px; margin-left: -4px; padding: 0 8px 0 4px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--muted); font: 500 12px/16px var(--font-sans); cursor: pointer; }
+.zone-earlier-toggle svg.i { display: block; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.zone-earlier-toggle .n { font-weight: 400; font-variant-numeric: tabular-nums; }
+.zone-earlier-toggle .sep { margin: 0 -2px; opacity: 0.6; }
+.zone-earlier-toggle:hover { background: var(--row-hover); color: var(--foreground); }
+.zone-earlier-toggle:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.zone-earlier.is-open .zone-earlier-toggle svg.i { rotate: 90deg; }
+.zone-earlier-cards { padding-top: 8px; }
+
+.canvas-corner-button { position: absolute; left: 16px; z-index: 30; display: grid; place-items: center; width: 48px; height: 48px;
+  padding: 0; border: 1px solid var(--card-border); border-radius: 50%; background: var(--panel); color: var(--nav-ink); box-shadow: var(--lift-shadow); }
+.canvas-corner-button:hover { border-color: var(--control-border); }
+.canvas-corner-button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.log-button { top: 16px; anchor-name: --log-button; }
+.log-button .card-icon { width: 23px; height: 23px; }
+.log-button[aria-expanded="true"] { background: var(--accent); border-color: var(--control-border); }
+.activity-log { position: fixed; position-anchor: --log-button; inset: calc(anchor(bottom) + 6px) auto auto anchor(left); margin: 0;
+  width: min(360px, calc(anchor-size(--canvas-workspace width, 100vw) - 32px)); padding: 0; border: 1px solid var(--card-border); border-radius: var(--radius-card);
+  background: var(--panel); color: var(--foreground); box-shadow: var(--lift-shadow); -webkit-app-region: no-drag; }
+.activity-log h2 { padding: 13px 16px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.activity-log p { padding: 16px; color: var(--muted); }
+.activity-log ol { list-style: none; max-height: min(60vh, 460px); overflow-y: auto; overscroll-behavior: contain; padding: 5px; }
+.activity-log li button { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 3px 8px;
+  width: 100%; padding: 9px 10px; text-align: left; background: transparent; border: 0; border-radius: var(--radius-control); color: inherit; }
+.activity-log li button:hover { background: var(--row-hover); }
+.activity-log li button:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.log-event { display: inline-flex; align-items: center; gap: 5px; color: var(--needs-ink); font-size: 11px; font-weight: 500; }
+.log-event[data-kind="reply"] { color: var(--done-ink); }
+.log-event[data-kind="interrupted"] { color: var(--interrupt-ink); }
+.activity-log time, .log-folder { color: var(--muted); font-size: 11px; }
+.activity-log time { font-family: var(--font-mono); }
+.activity-log strong, .log-folder { grid-column: 1 / -1; overflow: hidden; }
+.activity-log strong { font-size: 13px; font-weight: 550; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.log-folder { text-overflow: ellipsis; white-space: nowrap; }

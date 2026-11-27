@@ -1,0 +1,211 @@
+/* The project explorer: a zone's folder docked left of the canvas, inside .canvas-area as the
+   left-docked preview is (chat.css), so the chat panel keeps the right. One surface like the
+   chat panel: the header and the tree. A file opens in its own panel docked right of it
+   (.ex-viewer), so the tree keeps its height. Motion for both lives in motion.css. */
+
+.explorer {
+  --sel-fill: color-mix(in oklch, var(--highlight) 11%, var(--background));
+  /* As wide as it is open (--dock-open, 1 at rest; motion.css eases it), the gap beside it included. */
+  position: relative; order: -2; flex: 0 0 calc(var(--dock-open) * var(--ex-w)); margin-right: calc((var(--dock-open) - 1) * 8px);
+  max-width: calc(100% - 320px); min-width: 0; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--background); color: var(--foreground); border: 1px solid var(--card-border); border-radius: var(--radius-card); box-shadow: var(--card-shadow);
+}
+:where(.explorer, .ex-viewer) button { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-align: inherit; }
+:is(.explorer, .ex-viewer) svg.i { flex: none; display: block; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- header: the zone, its folder, Reload and Close ---------- */
+.ex-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--border); }
+.ex-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ex-title h2 { font: 600 13px/18px var(--font-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-root { font: 400 11px/14px var(--font-mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-icon { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-control); color: var(--nav-ink); cursor: pointer; }
+.ex-icon:hover { background: var(--row-hover); color: var(--foreground); }
+.ex-icon:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+
+/* ---------- the tree ---------- */
+.ex-tree { flex: 1 1 auto; min-height: 96px; overflow: auto; padding: 6px; border-radius: 0 0 var(--radius-card) var(--radius-card); }
+.ex-row { display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px 0 calc(6px + var(--depth) * 14px); border-radius: 6px;
+  color: var(--ink-soft); white-space: nowrap; cursor: default; user-select: none; }
+.ex-row:hover { background: var(--row-hover); color: var(--foreground); }
+.ex-row:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.ex-row svg.i { color: var(--muted); }
+.ex-row .ex-chev, .ex-chev-space { width: 10px; height: 10px; flex: none; }
+.ex-row[aria-expanded="true"] .ex-chev { rotate: 90deg; }
+.ex-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Dependencies, build output and .gitignore matches: there, but quiet. */
+.ex-row.is-ignored { color: var(--muted); }
+.ex-row.is-ignored > :not(.ex-chev) { opacity: 0.62; }
+/* A link out of the project: listed so nothing seems missing, never opened. */
+.ex-row.is-outside { color: var(--muted); }
+.ex-row.is-outside .ex-chev { visibility: hidden; }
+.ex-tag { margin-left: auto; font-size: 11px; color: var(--muted); }
+/* The open file: the selection's fill on the rounded row, no side stripe (see AGENTS.md). */
+.ex-row.is-open-file { background: var(--sel-fill); color: var(--foreground); }
+.ex-row.is-open-file svg.i { color: var(--foreground); }
+/* A folder's own line while it loads, when it fails, or when it is empty or cut short. */
+.ex-row.ex-sub { padding-left: calc(6px + var(--depth) * 14px + 26px); font-size: 12px; color: var(--muted); }
+.ex-row.ex-sub:hover { background: none; }
+.ex-row.ex-sub.is-error { color: var(--pill-negative); white-space: normal; height: auto; min-height: 26px; padding-block: 4px; line-height: 16px; }
+
+.ex-note { padding: 14px; color: var(--muted); font-size: 12px; line-height: 17px; }
+.ex-note strong { display: block; margin-bottom: 2px; color: var(--foreground); font-size: 13px; font-weight: 500; }
+.ex-note.is-error { color: var(--pill-negative); }
+
+/* ---------- the open file, docked right of the tree ---------- */
+/* After the explorer (same order, later in the page), before a left-docked preview; it eases open
+   as the explorer does (--dock-open) and leaves the canvas its room beside both. */
+.ex-viewer {
+  --sel-fill: color-mix(in oklch, var(--highlight) 11%, var(--background));
+  position: relative; order: -2; flex: 0 0 calc(var(--dock-open) * var(--fv-w)); margin-right: calc((var(--dock-open) - 1) * 8px);
+  max-width: calc(100% - var(--ex-w) - 8px - 320px); min-width: 0; min-height: 0;
+  display: flex; flex-direction: column;
+  background: var(--background); color: var(--foreground); border: 1px solid var(--card-border); border-radius: var(--radius-card); box-shadow: var(--card-shadow);
+}
+/* Too narrow to dock it and keep the canvas (the smallest window beside a chat): it floats over
+   the canvas next to the tree, and the canvas keeps its width under it. */
+.ex-viewer.is-floating { position: absolute; z-index: 5; top: 0; bottom: 0; left: calc(var(--ex-w) + 8px);
+  width: min(var(--fv-w), 100% - var(--ex-w) - 8px); max-width: none; flex: none; margin: 0; box-shadow: var(--lift-shadow); }
+.ex-pv-head { flex: none; display: flex; align-items: center; gap: 2px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--border); }
+.ex-pv-title { flex: 1; min-width: 0; display: flex; flex-direction: column; margin-right: 6px; }
+.ex-pv-title strong { font: 500 13px/18px var(--font-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-pv-path { font: 400 11px/14px var(--font-mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-pv-body { flex: 1; min-height: 0; overflow: auto; border-radius: 0 0 var(--radius-card) var(--radius-card); }
+.ex-text { padding: 10px 14px 14px; font: 400 11.5px/17px var(--font-mono); color: var(--ink-soft); white-space: pre; tab-size: 2; }
+
+/* JSON: Outline / Text, then the outline. */
+.ex-json-bar { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  background: var(--background); border-bottom: 1px solid var(--border); }
+/* Two choices of one width. The chosen one's fill is a thumb of its own under the labels, so it
+   can travel from one to the other (motion.css) instead of going out here and coming on there. */
+.ex-seg { position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px;
+  border: 1px solid var(--card-border); border-radius: var(--radius-control); }
+.ex-seg::before { content: ""; position: absolute; top: 2px; bottom: 2px; left: 2px; width: calc((100% - 6px) / 2);
+  border-radius: 6px; background: var(--accent); }
+.ex-seg:has(> button:last-child.is-on)::before { translate: calc(100% + 2px) 0; }
+.ex-seg button { position: relative; height: 20px; padding: 0 8px; border-radius: 6px; color: var(--muted); font-size: 11px; font-weight: 500; text-align: center; cursor: pointer; }
+.ex-seg button:hover { color: var(--foreground); }
+.ex-seg button.is-on { color: var(--foreground); }
+@media (forced-colors: active) { .ex-seg button.is-on { outline: 1px solid Highlight; outline-offset: -1px; } }
+.ex-seg button:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.ex-json-note { font-size: 11px; color: var(--muted); }
+.ex-parse-error { margin: 10px 14px 0; padding: 8px 10px; border-radius: var(--radius-control); font-size: 12px; line-height: 17px; overflow-wrap: anywhere;
+  color: var(--pill-negative); background: color-mix(in oklch, var(--pill-negative) 10%, transparent); }
+.ex-parse-error strong { font-weight: 600; margin-right: 4px; }
+
+.jv { padding: 8px 10px 14px; font: 400 11.5px/19px var(--font-mono); color: var(--ink-soft); }
+.jv-row { white-space: pre; }
+.jv-toggle { display: inline-grid; place-items: center; width: 14px; height: 14px; margin-right: 2px; vertical-align: -2px; border-radius: 4px; color: var(--muted); cursor: pointer; }
+.jv-toggle:hover:not(:disabled) { background: var(--row-hover); color: var(--foreground); }
+.jv-toggle:disabled { visibility: hidden; }
+.jv-toggle[aria-expanded="true"] svg { rotate: 90deg; }
+.jv-toggle:focus-visible, .jv-fold:focus-visible, .jv-more:focus-visible { outline: 2px solid var(--ring); outline-offset: 0; }
+.jv-key { color: color-mix(in oklch, var(--chart-5) 62%, var(--foreground)); }
+.jv-index { color: var(--muted); }
+.jv-string { color: var(--pill-positive); }
+.jv-number { color: color-mix(in oklch, var(--chart-3) 62%, var(--foreground)); }
+.jv-boolean, .jv-null { color: color-mix(in oklch, var(--chart-4) 62%, var(--foreground)); }
+.jv-punct { color: var(--muted); }
+.jv-fold { margin: 0 3px; padding: 0 5px; border-radius: 4px; background: var(--row-hover); color: var(--muted); font-size: 10.5px; cursor: pointer; }
+.jv-fold:hover { color: var(--foreground); }
+.jv-more { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.jv-more:hover { color: var(--foreground); }
+
+/* An image on a checkerboard (transparency shows), with its size under it. */
+.ex-image { display: flex; flex-direction: column; height: 100%; min-height: 180px; }
+/* The image shrinks to fit, so its facts stay in view under it at any panel height. */
+.ex-image-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 14px;
+  background: repeating-conic-gradient(var(--surface) 0 25%, var(--sidebar) 0 50%) 50% / 16px 16px; }
+.ex-image-stage img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.ex-image-facts { flex: none; display: flex; gap: 12px; padding: 8px 14px; border-top: 1px solid var(--border); font: 400 11px/14px var(--font-mono); color: var(--muted); }
+
+/* ---------- the right edge resizes ---------- */
+.ex-edge { position: absolute; top: 0; bottom: 0; right: -9px; width: 10px; z-index: 2; cursor: col-resize; touch-action: none; }
+.ex-edge::after { content: ""; position: absolute; top: 16px; bottom: 16px; left: 4px; width: 2px; border-radius: 1px; background: transparent; }
+.ex-edge:hover::after { background: var(--control-border); }
+.ex-edge:focus-visible { outline: none; }
+.ex-edge:focus-visible::after { background: var(--ring); }
+
+/* ---------- the zone label's Files button ---------- */
+/* Always shown, muted with the count and "+"; lit while its explorer is open. */
+.zone-files { flex: none; display: grid; place-items: center; width: 20px; height: 20px; margin: -2px -4px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--muted); cursor: pointer; transition: color 120ms var(--ease-out); }
+.zone-files svg.i { display: block; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.zone-files:hover { background: var(--row-hover); color: var(--foreground); }
+.zone-files[aria-pressed="true"] { color: var(--highlight); background: color-mix(in oklch, var(--highlight) 14%, transparent); }
+.zone-files:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+
+.ex-views { align-self: flex-start; margin: 8px 12px 4px; }
+.ex-panel, .git-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.git-panel { font-size: 12px; }
+.git-branch, .git-diff header, .git-buttons { display: flex; align-items: center; gap: 8px; }
+.git-branch { padding: 8px 14px; font: 11px var(--font-mono); }
+.git-branch strong, .git-branch span, .git-name, .git-file small, .git-diff strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.git-branch span, .git-file small, .git-files h3 span { color: var(--muted); }
+.git-selection { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 38px; padding: 6px 12px;
+  border-block: 1px solid var(--border); font-size: 11px; }
+.git-selection > span { margin-right: auto; color: var(--ink-soft); }
+.git-selection b { display: inline-block; }
+.git-selection button, .git-text-action { color: var(--highlight); font-size: 11px; cursor: pointer; padding: 3px 0;
+  text-decoration: underline transparent; text-underline-offset: 2px; }
+.git-selection button:hover:enabled, .git-text-action:hover { text-decoration-color: currentColor; }
+.git-selection button:disabled { color: var(--muted); opacity: .55; cursor: default; }
+.git-files { flex: 1; overflow: auto; padding: 3px 6px 8px; min-height: 48px; }
+.git-group, .git-file { display: flex; align-items: center; gap: 7px; padding: 0 6px; border-radius: var(--radius-control); }
+.git-group { margin-top: 4px; }
+.git-group input, .git-file input, .git-check-space, .git-warning { flex: none; width: 13px; height: 13px; margin: 0; accent-color: var(--highlight); }
+.git-warning { display: grid; place-items: center; border-radius: 50%; background: var(--pill-warning); color: var(--pill-warning-ink); font: 700 10px var(--font-sans); }
+.git-group h3 { flex: 1; font-size: 12px; font-weight: 600; }
+.git-group h3 button { display: flex; align-items: center; width: 100%; gap: 6px; padding: 5px 0; cursor: pointer; }
+.git-group h3 span { font: 10px var(--font-mono); }
+.git-group button[aria-expanded="true"] .git-chev { rotate: 90deg; }
+/* While the first read is out: the list's shape, in quiet blocks the size of what they stand for. */
+.git-ghost { flex: none; display: block; height: 8px; border-radius: 4px; background: var(--accent); }
+.git-ghost.is-box { width: 13px; height: 13px; border-radius: 3px; }
+.git-ghosts { overflow: hidden; }
+.git-ghosts :is(.git-group, .git-file) { height: 28px; pointer-events: none; }
+.git-file { padding-left: 20px; }
+.git-file:hover, .git-group:hover { background: var(--row-hover); }
+.git-file.is-selected { background: var(--sel-fill); }
+.git-file button { min-width: 0; flex: 1; display: flex; align-items: baseline; gap: 7px; padding: 5px 0; cursor: pointer; }
+.git-file small { flex: 1; font: 10px var(--font-mono); }
+.git-name { min-width: 0; max-width: 72%; }
+.git-files [data-kind="Modified"] .git-name { color: color-mix(in oklch, var(--chart-5) 53%, var(--foreground)); }
+.git-files [data-kind="Added"] .git-name { color: var(--pill-positive); }
+.git-files [data-kind="Deleted"] .git-name { color: var(--pill-negative); }
+.git-files [data-kind="Conflicts"] .git-name, .git-files [data-kind="Conflicts"] .git-detail { color: var(--pill-warning); }
+.git-files [data-kind="Untracked"] .git-name { color: var(--ink-soft); }
+.git-detail { font-size: 10px; max-width: 46%; overflow-wrap: anywhere; color: var(--highlight); }
+/* A fixed share of the panel, whatever the file: the list above keeps its place while a diff is
+   read, and from one file's diff to the next. */
+.git-diff { flex: 0 1 40%; display: flex; flex-direction: column; min-height: 68px; border-top: 1px solid var(--border);
+  --add-fill: color-mix(in oklch, var(--pill-positive) 10%, transparent); --add-ink: var(--pill-positive);
+  --del-fill: color-mix(in oklch, var(--pill-negative) 10%, transparent); --del-ink: var(--pill-negative); }
+.git-diff header { padding: 3px 6px 3px 12px; gap: 8px; }
+.git-diff header strong { min-width: 0; flex: 1; }
+.git-patches { overflow: auto; flex: 1; min-height: 0; user-select: text; }
+.git-patches h4 { position: sticky; left: 0; padding: 5px 12px; color: var(--ink-soft); font-size: 11px; font-weight: 500; background: var(--surface); }
+.git-patches pre { margin: 0; padding: 6px 12px; font: 11px/1.6 var(--font-mono); white-space: pre; }
+.git-patches .t-diff.is-full { width: max-content; min-width: 100%; font-size: 11px; }
+.git-patches .t-diff.is-full .ln .tx { overflow: visible; }
+.git-review { margin: auto; padding: 0; width: min(900px, 90vw); height: min(720px, 82vh); background: var(--background); color: var(--foreground);
+  border: 1px solid var(--control-border); border-radius: var(--radius-card); }
+.git-review[open] { display: flex; flex-direction: column; }
+.git-review::backdrop { background: rgb(0 0 0 / 55%); }
+.git-review header { padding: 7px 10px 7px 16px; border-bottom: 1px solid var(--border); }
+.git-compose { display: grid; gap: 7px; padding: 10px 12px; border-top: 1px solid var(--border); }
+.git-compose p { color: var(--muted); overflow-wrap: anywhere; max-height: 7em; overflow: auto; }
+.git-compose .git-error { color: var(--pill-negative); }
+.git-compose textarea { width: 100%; resize: vertical; max-height: 100px; padding: 7px; border-radius: var(--radius-control); border: 1px solid var(--control-border); background: var(--surface); color: inherit; font: inherit; }
+.git-action { justify-self: start; cursor: pointer; border: 1px solid var(--control-border); padding: 5px 10px; border-radius: var(--radius-control); }
+.git-action.primary { font-weight: 600; background: var(--sel-fill); }
+.git-action:hover:enabled { background: var(--row-hover); }
+.git-action:disabled { color: var(--muted); opacity: .65; cursor: default; }
+.git-panel :is(input, button, textarea, pre):focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.git-issue-filter { align-self: flex-start; margin: 5px 12px 1px; padding: 3px 0; color: var(--pill-warning); font-size: 11px; cursor: pointer;
+  text-decoration: underline transparent; text-underline-offset: 2px; }
+.git-issue-filter:hover { text-decoration-color: currentColor; }
+.git-issue-count { color: var(--pill-warning); white-space: nowrap; font: 10px var(--font-mono); }
+.git-findings { margin: 0; padding: 4px 12px; max-height: 68px; overflow: auto; flex-shrink: 0; list-style: none;
+  color: var(--pill-warning); background: color-mix(in oklch, var(--pill-warning) 7%, transparent); font-size: 11px; }
+.git-findings li { padding: 2px 0; overflow-wrap: anywhere; }

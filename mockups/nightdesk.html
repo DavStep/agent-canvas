@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent canvas · Night desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#1b1a18;
+    --dot:#2b2a27;
+    --bar:#1f1d1b;
+    --panel:#211f1d;
+    --card:#262421;
+    --card-hover:#2b2926;
+    --line:#36332e;
+    --line-soft:#2f2c28;
+    --line-strong:#4a463f;
+    --idle-card:#22201e;
+
+    --text:#ece7dd;
+    --text-2:#a49d90;
+    --text-3:#958f83;
+    --idle-title:#bab3a6;
+
+    --clay:#c8674a;
+    --clay-btn:#b65a3f;
+    --alert:#d1553f;
+    --alert-text:#e27d64;
+    --alert-ink:#ad3f2b;
+    --alert-bg:#2d2320;
+    --paper:#f3eee4;
+    --ink:#2a2622;
+    --sage:#a9b98a;
+
+    --moss:#8a9a5b;
+    --teal:#6f9a96;
+    --ochre:#b8964e;
+    --mauve:#93858f;
+
+    --r-card:10px;
+    --r-zone:14px;
+    --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{
+    background:var(--canvas);color:var(--text);
+    font:400 13px/18px var(--sans);
+    -webkit-font-smoothing:antialiased;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 360px;
+    grid-template-rows:44px 44px minmax(0,1fr);
+    min-width:1280px;
+  }
+  code,.mono{font-family:var(--mono)}
+  .px{display:block;image-rendering:pixelated}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    grid-column:1/-1;display:flex;align-items:center;gap:16px;
+    padding:0 20px;background:var(--bar);border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;letter-spacing:.005em}
+  .counts{font:400 11px/14px var(--mono);color:var(--text-2);padding-left:16px;border-left:1px solid var(--line);height:16px;display:flex;align-items:center}
+  .counts b{font-weight:500;color:var(--alert-text)}
+  .controls{margin-left:auto;display:flex;gap:4px}
+  .controls span{font-size:12px;line-height:16px;color:var(--text-2);padding:4px 8px;border-radius:6px;cursor:default}
+  .controls span:hover{color:var(--text);background:#2a2825}
+  .controls .mono{font-size:11px}
+
+  /* ---------- needs-you strip ---------- */
+  .strip{
+    grid-column:1/-1;display:flex;align-items:center;gap:12px;min-width:0;
+    padding:0 20px;background:#221d1b;border-bottom:1px solid var(--line);
+  }
+  .strip-label{display:flex;align-items:center;gap:8px;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap;padding-right:4px}
+  .strip-label .dot{width:8px;height:8px;border-radius:50%;background:var(--alert)}
+  .strip-label .mono{font-weight:500;font-size:11px;color:var(--alert-text)}
+  .chip{
+    display:flex;align-items:center;gap:8px;min-width:0;height:28px;padding:0 10px 0 6px;
+    background:#2a2320;border:1px solid #4b342d;border-radius:8px;font-size:12px;line-height:16px;cursor:default;
+  }
+  .chip:hover{border-color:var(--alert)}
+  .chip .face{flex:none;width:20px;height:18px}
+  .chip strong{font-weight:600;white-space:nowrap}
+  .chip .why{color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .chip .t{font:500 11px/14px var(--mono);color:var(--alert-text);flex:none}
+
+  /* ---------- canvas ---------- */
+  .canvas{
+    position:relative;overflow:hidden;
+    background-color:var(--canvas);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='11' y='11' width='2' height='2' rx='1' fill='%232b2a27'/%3E%3C/svg%3E");
+    background-position:-6px -2px;
+  }
+  .board{position:absolute;width:852px;height:770px;left:max(28px,calc(50% - 426px));top:max(20px,calc(50% - 385px))}
+
+  .zone{
+    position:absolute;border-radius:var(--r-zone);
+    border:1px solid color-mix(in srgb,var(--hue) 34%,transparent);
+    background:color-mix(in srgb,var(--hue) 4%,transparent);
+    padding:var(--band,44px) 16px 16px;
+  }
+  .zone-head{position:absolute;top:12px;left:16px;right:16px;display:flex;align-items:center;gap:8px;font-size:12px;line-height:16px;font-weight:600}
+  .zone-head i{width:8px;height:8px;background:var(--hue);border-radius:2px}
+  .zone-head .n{margin-left:auto;font:400 11px/14px var(--mono);color:var(--text-2)}
+  .cards{display:grid;gap:12px;grid-template-columns:repeat(var(--cols,1),232px)}
+
+  .z-garden{--hue:var(--moss);--cols:3;--band:92px;left:0;top:0}
+  .z-dash{--hue:var(--teal);--cols:2;--band:76px;left:20px;top:364px}
+  .z-broad{--hue:var(--ochre);left:552px;top:372px}
+  .z-none{--hue:var(--mauve);--band:76px;left:584px;top:562px}
+
+  /* ---------- card ---------- */
+  .card{
+    position:relative;display:flex;flex-direction:column;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);
+    padding:12px;cursor:default;
+    transition:background-color .15s, border-color .15s;
+  }
+  .card:hover{background:var(--card-hover);border-color:var(--line-strong)}
+  .card-top{display:flex;gap:8px;min-height:40px}
+  .title{flex:1;min-width:0;font-size:13px;line-height:18px;font-weight:600;color:var(--text);padding-top:1px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .sprite{flex:none;width:40px;height:40px;position:relative}
+  .status{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:8px;font-size:12px;line-height:16px;font-weight:500}
+  .status .sub{font-weight:400}
+  .mark{flex:none;width:7px;height:7px}
+  .foot{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font:400 11px/14px var(--mono);color:var(--text-2);white-space:nowrap}
+
+  .working .status{color:#bcc89f}
+  .working .mark{background:var(--sage)}
+
+  .needs{border:1.5px solid var(--alert);background:var(--alert-bg);padding:11.5px}
+  .needs:hover{background:#33261f;border-color:#e0614a}
+  .needs .status{color:var(--alert-text)}
+  .needs .mark{background:var(--alert);transform:rotate(45deg) scale(.92)}
+  .needs .foot span:last-child{color:var(--alert-text)}
+
+  .idle{background:var(--idle-card);border-color:var(--line-soft)}
+  .idle .title{color:var(--idle-title);font-weight:500}
+  .idle .status{color:var(--text-3);font-weight:400}
+  .idle .mark{border:1.5px solid #6f6a61}
+  .idle .foot{color:var(--text-3)}
+  .idle:hover{background:#262421;border-color:var(--line)}
+  .idle:hover .title{color:var(--text)}
+  .zz{position:absolute;top:-10px;right:-8px}
+
+  .selected{outline:1.5px solid var(--text);outline-offset:3px}
+
+  /* speech bubble */
+  .bubble{
+    position:absolute;right:4px;bottom:calc(100% + 10px);max-width:224px;width:max-content;
+    background:var(--paper);color:var(--ink);border-radius:8px;
+    padding:7px 10px;font-size:12px;line-height:16px;font-weight:500;
+    filter:drop-shadow(0 6px 10px rgba(0,0,0,.34));
+    z-index:2;
+  }
+  .bubble::before,.bubble::after{content:"";position:absolute;background:var(--paper)}
+  .bubble::before{right:20px;bottom:-4px;width:12px;height:4px}
+  .bubble::after{right:24px;bottom:-8px;width:4px;height:4px}
+  .needs .bubble{color:var(--alert-ink)}
+  .bubble code{font-size:11px;font-weight:500;letter-spacing:-.01em}
+
+  /* subagents */
+  .tray{display:flex;gap:16px;margin:12px -12px -12px;padding:8px 12px 8px;background:#211f1c;border-top:1px solid var(--line-soft);border-radius:0 0 9px 9px}
+  .kid{display:flex;flex-direction:column;gap:4px;font:400 11px/14px var(--mono);color:var(--text-2)}
+  .kid-fig{display:flex;align-items:flex-end;gap:4px}
+  .kid .check{margin-bottom:5px}
+
+  /* ---------- side panel ---------- */
+  .panel{
+    grid-column:2;grid-row:3;background:var(--panel);border-left:1px solid var(--line);
+    display:flex;flex-direction:column;padding:24px;gap:24px;min-height:0;overflow:hidden;
+  }
+  .p-head{display:flex;gap:16px;align-items:flex-end;padding-bottom:20px;border-bottom:1px solid var(--line-soft)}
+  .p-head .px{flex:none}
+  .p-title{font-size:18px;line-height:24px;font-weight:600;letter-spacing:-.005em;padding-bottom:4px}
+  .p-state{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:12px;line-height:16px;font-weight:500;color:#bcc89f}
+  .p-state .mark{background:var(--sage)}
+  .meta{display:grid;grid-template-columns:80px 1fr;row-gap:8px;font-size:12px;line-height:16px}
+  .meta dt{color:var(--text-2)}
+  .meta dd{font:400 12px/16px var(--mono);color:var(--text)}
+  .sec-label{font-size:12px;line-height:16px;font-weight:500;color:var(--text-2);margin-bottom:8px}
+  .you{display:flex;justify-content:flex-end}
+  .you p{position:relative;background:#3a2d27;color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;line-height:18px}
+  .you p::after{content:"";position:absolute;right:8px;bottom:-4px;width:8px;height:4px;background:#3a2d27}
+  .answer{display:flex;gap:8px;align-items:flex-end}
+  .answer .face{flex:none;width:20px;height:18px;margin-bottom:2px}
+  .answer .msg{position:relative;background:var(--paper);color:var(--ink);border-radius:8px;padding:10px 12px;font-size:13px;line-height:18px}
+  .answer .msg p+p{margin-top:8px}
+  .answer .msg::after{content:"";position:absolute;left:-4px;bottom:6px;width:4px;height:8px;background:var(--paper)}
+  .actions{margin-top:auto;display:flex;gap:8px}
+  .btn{flex:none;padding:0 16px;height:36px;border-radius:8px;font:500 13px/18px var(--sans);display:flex;align-items:center;justify-content:center;cursor:default;white-space:nowrap}
+  .btn.primary{background:var(--clay-btn);color:#fbf6ee;border:1px solid var(--clay-btn)}
+  .btn.primary:hover{background:#c2603f;border-color:#c2603f}
+  .btn.ghost{flex:1;border:1px solid var(--line-strong);color:var(--text);background:transparent}
+  .btn.ghost:hover{border-color:#6a655c;background:#262421}
+
+  /* ---------- motion (stepped, pixel-honest) ---------- */
+  .bob{animation:bob 1.4s steps(1,end) infinite}
+  .panel .bob{animation-name:bob-lg}
+  .blink{animation:blink 1.1s steps(1,end) infinite}
+  .hop{animation:hop 1.8s steps(1,end) infinite}
+  @keyframes bob{0%{transform:translateY(0)}50%{transform:translateY(-.5px)}100%{transform:translateY(-.5px)}}
+  @keyframes bob-lg{0%{transform:translateY(0)}50%{transform:translateY(-.25px)}100%{transform:translateY(-.25px)}}
+  @keyframes blink{0%{opacity:1}50%{opacity:0}100%{opacity:0}}
+  @keyframes hop{0%{transform:translateY(0)}72%{transform:translateY(-.5px)}86%{transform:translateY(0)}100%{transform:translateY(0)}}
+  @media (prefers-reduced-motion:reduce){
+    .bob,.blink,.hop{animation:none}
+    .card,.btn,.chip{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><svg class="px " width="20" height="16" viewBox="0 2 10 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="3" width="4" height="1" fill="#c8674a"/><rect x="2" y="4" width="1" height="1" fill="#c8674a"/><rect x="3" y="4" width="2" height="1" fill="#d38369"/><rect x="5" y="4" width="3" height="1" fill="#c8674a"/><rect x="1" y="5" width="1" height="1" fill="#c8674a"/><rect x="2" y="5" width="1" height="1" fill="#d38369"/><rect x="3" y="5" width="6" height="1" fill="#c8674a"/><rect x="1" y="6" width="2" height="1" fill="#c8674a"/><rect x="3" y="6" width="1" height="1" fill="#2b1d18"/><rect x="4" y="6" width="2" height="1" fill="#c8674a"/><rect x="6" y="6" width="1" height="1" fill="#2b1d18"/><rect x="7" y="6" width="1" height="1" fill="#c8674a"/><rect x="8" y="6" width="1" height="1" fill="#9e553e"/><rect x="1" y="7" width="1" height="1" fill="#c8674a"/><rect x="2" y="7" width="1" height="1" fill="#e6917d"/><rect x="3" y="7" width="1" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#c8674a"/><rect x="6" y="7" width="1" height="1" fill="#2b1d18"/><rect x="7" y="7" width="1" height="1" fill="#e6917d"/><rect x="8" y="7" width="1" height="1" fill="#9e553e"/><rect x="2" y="8" width="1" height="1" fill="#9e553e"/><rect x="3" y="8" width="4" height="1" fill="#c8674a"/><rect x="7" y="8" width="1" height="1" fill="#9e553e"/><rect x="2" y="9" width="2" height="1" fill="#7a4434"/><rect x="6" y="9" width="2" height="1" fill="#7a4434"/></svg>Agent canvas</div>
+  <div class="counts">11 sessions · 3 working ·&nbsp;<b>2 need you</b></div>
+  <nav class="controls"><span>Zones</span><span>Fit</span><span class="mono">100%</span></nav>
+</header>
+
+<section class="strip" aria-label="Needs you">
+  <div class="strip-label"><span class="dot"></span>Needs you <span class="mono">2</span></div>
+  <div class="chip"><span class="face"><svg class="px " width="20" height="18" viewBox="0 0 10 9" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="1" width="1" height="1" fill="#62703f"/><rect x="3" y="2" width="1" height="1" fill="#9aaa6c"/><rect x="4" y="2" width="3" height="1" fill="#7f8f55"/><rect x="2" y="3" width="6" height="1" fill="#7f8f55"/><rect x="8" y="3" width="2" height="1" fill="#62703f"/><rect x="2" y="4" width="1" height="1" fill="#d98a5f"/><rect x="3" y="4" width="2" height="1" fill="#e19f7a"/><rect x="5" y="4" width="3" height="1" fill="#d98a5f"/><rect x="1" y="5" width="1" height="1" fill="#d98a5f"/><rect x="2" y="5" width="1" height="1" fill="#e19f7a"/><rect x="3" y="5" width="6" height="1" fill="#d98a5f"/><rect x="1" y="6" width="2" height="1" fill="#d98a5f"/><rect x="3" y="6" width="1" height="1" fill="#2b1d18"/><rect x="4" y="6" width="2" height="1" fill="#d98a5f"/><rect x="6" y="6" width="1" height="1" fill="#2b1d18"/><rect x="7" y="6" width="1" height="1" fill="#d98a5f"/><rect x="8" y="6" width="1" height="1" fill="#ab6f4e"/><rect x="1" y="7" width="1" height="1" fill="#d98a5f"/><rect x="2" y="7" width="1" height="1" fill="#eea186"/><rect x="3" y="7" width="1" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#d98a5f"/><rect x="6" y="7" width="1" height="1" fill="#2b1d18"/><rect x="7" y="7" width="1" height="1" fill="#eea186"/><rect x="8" y="7" width="1" height="1" fill="#ab6f4e"/><rect x="2" y="8" width="1" height="1" fill="#ab6f4e"/><rect x="3" y="8" width="4" height="1" fill="#d98a5f"/><rect x="7" y="8" width="1" height="1" fill="#ab6f4e"/><rect x="2" y="9" width="2" height="1" fill="#84583f"/><rect x="6" y="9" width="2" height="1" fill="#84583f"/></svg></span><strong>Enable account deletion approvals on Hostly</strong><span class="why">asks permission to run a command</span><span class="t">2m</span></div>
+  <div class="chip"><span class="face"><svg class="px " width="20" height="18" viewBox="0 0 10 9" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="0" width="1" height="1" fill="#8a7d92"/><rect x="5" y="1" width="2" height="1" fill="#8a7d92"/><rect x="4" y="2" width="2" height="1" fill="#8a7d92"/><rect x="6" y="2" width="1" height="1" fill="#d9b25a"/><rect x="7" y="2" width="1" height="1" fill="#8a7d92"/><rect x="1" y="3" width="8" height="1" fill="#6a5f74"/><rect x="2" y="4" width="1" height="1" fill="#b5533c"/><rect x="3" y="4" width="2" height="1" fill="#c4735e"/><rect x="5" y="4" width="3" height="1" fill="#b5533c"/><rect x="1" y="5" width="1" height="1" fill="#b5533c"/><rect x="2" y="5" width="1" height="1" fill="#c4735e"/><rect x="3" y="5" width="6" height="1" fill="#b5533c"/><rect x="1" y="6" width="2" height="1" fill="#b5533c"/><rect x="3" y="6" width="1" height="1" fill="#2b1d18"/><rect x="4" y="6" width="2" height="1" fill="#b5533c"/><rect x="6" y="6" width="1" height="1" fill="#2b1d18"/><rect x="7" y="6" width="1" height="1" fill="#b5533c"/><rect x="8" y="6" width="1" height="1" fill="#904533"/><rect x="1" y="7" width="1" height="1" fill="#b5533c"/><rect x="2" y="7" width="1" height="1" fill="#de8876"/><rect x="3" y="7" width="1" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#b5533c"/><rect x="6" y="7" width="1" height="1" fill="#2b1d18"/><rect x="7" y="7" width="1" height="1" fill="#de8876"/><rect x="8" y="7" width="1" height="1" fill="#904533"/><rect x="2" y="8" width="1" height="1" fill="#904533"/><rect x="3" y="8" width="4" height="1" fill="#b5533c"/><rect x="7" y="8" width="1" height="1" fill="#904533"/><rect x="2" y="9" width="2" height="1" fill="#70392c"/><rect x="6" y="9" width="2" height="1" fill="#70392c"/></svg></span><strong>Purchases unavailable in production</strong><span class="why">finished, waiting for your reply</span><span class="t">14m</span></div>
+</section>
+
+<main class="canvas">
+  <div class="board">
+
+    <section class="zone z-garden">
+      <div class="zone-head"><i></i>garden-sim<span class="n">5</span></div>
+      <div class="cards">
+        <article class="card working">
+          <div class="bubble">Editing ReconnectDialog.tsx</div>
+          <div class="card-top">
+            <h3 class="title">Reconnection dialog and animation issues</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><g class="bob"><rect x="3" y="3" width="4" height="1" fill="#c8674a"/><rect x="2" y="4" width="6" height="1" fill="#6f9a96"/><rect x="8" y="4" width="1" height="1" fill="#557c78"/><rect x="1" y="5" width="1" height="1" fill="#c8674a"/><rect x="2" y="5" width="1" height="1" fill="#d38369"/><rect x="3" y="5" width="6" height="1" fill="#c8674a"/><rect x="9" y="5" width="1" height="1" fill="#557c78"/><rect x="1" y="6" width="1" height="1" fill="#c8674a"/><rect x="2" y="6" width="1" height="1" fill="#2b1d18"/><rect x="3" y="6" width="2" height="1" fill="#c8674a"/><rect x="5" y="6" width="1" height="1" fill="#2b1d18"/><rect x="6" y="6" width="2" height="1" fill="#c8674a"/><rect x="8" y="6" width="1" height="1" fill="#9e553e"/><rect x="1" y="7" width="1" height="1" fill="#e6917d"/><rect x="2" y="7" width="1" height="1" fill="#2b1d18"/><rect x="3" y="7" width="2" height="1" fill="#c8674a"/><rect x="5" y="7" width="1" height="1" fill="#2b1d18"/><rect x="6" y="7" width="1" height="1" fill="#e6917d"/><rect x="7" y="7" width="1" height="1" fill="#c8674a"/><rect x="8" y="7" width="1" height="1" fill="#9e553e"/><rect x="2" y="8" width="1" height="1" fill="#9e553e"/><rect x="3" y="8" width="4" height="1" fill="#c8674a"/><rect x="7" y="8" width="1" height="1" fill="#9e553e"/><rect x="2" y="9" width="2" height="1" fill="#7a4434"/><rect x="6" y="9" width="2" height="1" fill="#7a4434"/></g><g class="blink"><rect x="0" y="7" width="1" height="3" fill="#ece7dd"/></g></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Working</span></div>
+          <div class="foot"><span>fix/reconnect</span><span>6m in this turn</span></div>
+        </article>
+        <article class="card needs">
+          <div class="bubble">Wants to run: <code>ssh hostly systemctl restart api</code></div>
+          <div class="card-top">
+            <h3 class="title">Enable account deletion approvals on Hostly</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><g><rect x="4" y="1" width="1" height="1" fill="#62703f"/><rect x="3" y="2" width="1" height="1" fill="#9aaa6c"/><rect x="4" y="2" width="3" height="1" fill="#7f8f55"/><rect x="2" y="3" width="6" height="1" fill="#7f8f55"/><rect x="8" y="3" width="2" height="1" fill="#62703f"/><rect x="2" y="4" width="1" height="1" fill="#d98a5f"/><rect x="3" y="4" width="2" height="1" fill="#e19f7a"/><rect x="5" y="4" width="3" height="1" fill="#d98a5f"/><rect x="1" y="5" width="1" height="1" fill="#d98a5f"/><rect x="2" y="5" width="1" height="1" fill="#e19f7a"/><rect x="3" y="5" width="6" height="1" fill="#d98a5f"/><rect x="1" y="6" width="2" height="1" fill="#d98a5f"/><rect x="3" y="6" width="1" height="1" fill="#2b1d18"/><rect x="4" y="6" width="2" height="1" fill="#d98a5f"/><rect x="6" y="6" width="1" height="1" fill="#2b1d18"/><rect x="7" y="6" width="1" height="1" fill="#d98a5f"/><rect x="8" y="6" width="1" height="1" fill="#ab6f4e"/><rect x="1" y="7" width="1" height="1" fill="#d98a5f"/><rect x="2" y="7" width="1" height="1" fill="#eea186"/><rect x="3" y="7" width="1" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#d98a5f"/><rect x="6" y="7" width="1" height="1" fill="#2b1d18"/><rect x="7" y="7" width="1" height="1" fill="#eea186"/><rect x="8" y="7" width="1" height="1" fill="#ab6f4e"/><rect x="2" y="8" width="1" height="1" fill="#ab6f4e"/><rect x="3" y="8" width="4" height="1" fill="#d98a5f"/><rect x="7" y="8" width="1" height="1" fill="#ab6f4e"/><rect x="2" y="9" width="2" height="1" fill="#84583f"/><rect x="6" y="9" width="2" height="1" fill="#84583f"/></g><g class="hop"><rect x="0" y="0" width="1" height="3" fill="#e0614a"/><rect x="0" y="4" width="1" height="1" fill="#e0614a"/></g></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Needs you <span class="sub">· permission</span></span></div>
+          <div class="foot"><span>main</span><span>2m</span></div>
+        </article>
+        <article class="card needs">
+          <div class="bubble">Found it: product IDs differ between sandbox and production</div>
+          <div class="card-top">
+            <h3 class="title">Purchases unavailable in production</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><g><rect x="6" y="0" width="1" height="1" fill="#8a7d92"/><rect x="5" y="1" width="2" height="1" fill="#8a7d92"/><rect x="4" y="2" width="2" height="1" fill="#8a7d92"/><rect x="6" y="2" width="1" height="1" fill="#d9b25a"/><rect x="7" y="2" width="1" height="1" fill="#8a7d92"/><rect x="1" y="3" width="8" height="1" fill="#6a5f74"/><rect x="2" y="4" width="1" height="1" fill="#b5533c"/><rect x="3" y="4" width="2" height="1" fill="#c4735e"/><rect x="5" y="4" width="3" height="1" fill="#b5533c"/><rect x="1" y="5" width="1" height="1" fill="#b5533c"/><rect x="2" y="5" width="1" height="1" fill="#c4735e"/><rect x="3" y="5" width="6" height="1" fill="#b5533c"/><rect x="1" y="6" width="2" height="1" fill="#b5533c"/><rect x="3" y="6" width="1" height="1" fill="#2b1d18"/><rect x="4" y="6" width="2" height="1" fill="#b5533c"/><rect x="6" y="6" width="1" height="1" fill="#2b1d18"/><rect x="7" y="6" width="1" height="1" fill="#b5533c"/><rect x="8" y="6" width="1" height="1" fill="#904533"/><rect x="1" y="7" width="1" height="1" fill="#b5533c"/><rect x="2" y="7" width="1" height="1" fill="#de8876"/><rect x="3" y="7" width="1" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#b5533c"/><rect x="6" y="7" width="1" height="1" fill="#2b1d18"/><rect x="7" y="7" width="1" height="1" fill="#de8876"/><rect x="8" y="7" width="1" height="1" fill="#904533"/><rect x="2" y="8" width="1" height="1" fill="#904533"/><rect x="3" y="8" width="4" height="1" fill="#b5533c"/><rect x="7" y="8" width="1" height="1" fill="#904533"/><rect x="2" y="9" width="2" height="1" fill="#70392c"/><rect x="6" y="9" width="2" height="1" fill="#70392c"/></g><g class="hop" style="animation-delay:0.6s"><rect x="0" y="0" width="1" height="3" fill="#e0614a"/><rect x="0" y="4" width="1" height="1" fill="#e0614a"/></g></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Needs you <span class="sub">· reply</span></span></div>
+          <div class="foot"><span>main</span><span>14m</span></div>
+        </article>
+        <article class="card idle">
+          
+          <div class="card-top">
+            <h3 class="title">Preview improvement suggestions</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="3" width="1" height="1" fill="#aab5b1"/><rect x="3" y="3" width="1" height="1" fill="#6e8883"/><rect x="4" y="3" width="2" height="1" fill="#9b8474"/><rect x="6" y="3" width="1" height="1" fill="#aab5b1"/><rect x="7" y="3" width="1" height="1" fill="#6e8883"/><rect x="1" y="4" width="1" height="1" fill="#464a4a"/><rect x="2" y="4" width="2" height="1" fill="#6e8883"/><rect x="4" y="4" width="2" height="1" fill="#464a4a"/><rect x="6" y="4" width="2" height="1" fill="#6e8883"/><rect x="8" y="4" width="1" height="1" fill="#464a4a"/><rect x="1" y="5" width="1" height="1" fill="#9b8474"/><rect x="2" y="5" width="1" height="1" fill="#a29082"/><rect x="3" y="5" width="6" height="1" fill="#9b8474"/><rect x="1" y="6" width="7" height="1" fill="#9b8474"/><rect x="8" y="6" width="1" height="1" fill="#7d6c5f"/><rect x="1" y="7" width="1" height="1" fill="#9b8474"/><rect x="2" y="7" width="2" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#9b8474"/><rect x="6" y="7" width="2" height="1" fill="#2b1d18"/><rect x="8" y="7" width="1" height="1" fill="#7d6c5f"/><rect x="2" y="8" width="1" height="1" fill="#7d6c5f"/><rect x="3" y="8" width="4" height="1" fill="#9b8474"/><rect x="7" y="8" width="1" height="1" fill="#7d6c5f"/><rect x="2" y="9" width="2" height="1" fill="#63574d"/><rect x="6" y="9" width="2" height="1" fill="#63574d"/></svg><svg class="zz" width="16" height="14" viewBox="0 0 8 7" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="3" height="1" fill="#a49d90"/><rect x="6" y="1" width="1" height="1" fill="#a49d90"/><rect x="5" y="2" width="3" height="1" fill="#a49d90"/><rect x="0" y="3" width="4" height="1" fill="#a49d90"/><rect x="2" y="4" width="1" height="1" fill="#a49d90"/><rect x="1" y="5" width="1" height="1" fill="#a49d90"/><rect x="0" y="6" width="4" height="1" fill="#a49d90"/></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Idle</span></div>
+          <div class="foot"><span>main</span><span>last active 3h ago</span></div>
+        </article>
+        <article class="card idle">
+          
+          <div class="card-top">
+            <h3 class="title">Codex usage credits analysis</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="3" width="4" height="1" fill="#816056"/><rect x="2" y="4" width="1" height="1" fill="#816056"/><rect x="3" y="4" width="2" height="1" fill="#8e7269"/><rect x="5" y="4" width="3" height="1" fill="#816056"/><rect x="1" y="5" width="1" height="1" fill="#816056"/><rect x="2" y="5" width="1" height="1" fill="#8e7269"/><rect x="3" y="5" width="6" height="1" fill="#816056"/><rect x="1" y="6" width="7" height="1" fill="#816056"/><rect x="8" y="6" width="1" height="1" fill="#6a5049"/><rect x="1" y="7" width="1" height="1" fill="#816056"/><rect x="2" y="7" width="2" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#816056"/><rect x="6" y="7" width="2" height="1" fill="#2b1d18"/><rect x="8" y="7" width="1" height="1" fill="#6a5049"/><rect x="1" y="8" width="2" height="1" fill="#917c53"/><rect x="3" y="8" width="1" height="1" fill="#756340"/><rect x="4" y="8" width="2" height="1" fill="#917c53"/><rect x="6" y="8" width="1" height="1" fill="#756340"/><rect x="7" y="8" width="3" height="1" fill="#917c53"/><rect x="2" y="9" width="2" height="1" fill="#55423d"/><rect x="6" y="9" width="2" height="1" fill="#55423d"/><rect x="9" y="9" width="1" height="1" fill="#756340"/></svg><svg class="zz" width="16" height="14" viewBox="0 0 8 7" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="3" height="1" fill="#a49d90"/><rect x="6" y="1" width="1" height="1" fill="#a49d90"/><rect x="5" y="2" width="3" height="1" fill="#a49d90"/><rect x="0" y="3" width="4" height="1" fill="#a49d90"/><rect x="2" y="4" width="1" height="1" fill="#a49d90"/><rect x="1" y="5" width="1" height="1" fill="#a49d90"/><rect x="0" y="6" width="4" height="1" fill="#a49d90"/></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Idle</span></div>
+          <div class="foot"><span>main</span><span>last active yesterday</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="zone z-dash">
+      <div class="zone-head"><i></i>garden-dashboard<span class="n">4</span></div>
+      <div class="cards">
+        <article class="card working">
+          <div class="bubble">Running tests</div>
+          <div class="card-top">
+            <h3 class="title">Database visualization dashboard</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><g class="bob" style="animation-delay:0.5s"><rect x="2" y="0" width="1" height="1" fill="#7fb0a8"/><rect x="7" y="0" width="1" height="1" fill="#7fb0a8"/><rect x="2" y="1" width="1" height="1" fill="#8a7b6c"/><rect x="7" y="1" width="1" height="1" fill="#8a7b6c"/><rect x="3" y="2" width="1" height="1" fill="#8a7b6c"/><rect x="6" y="2" width="1" height="1" fill="#8a7b6c"/><rect x="3" y="3" width="4" height="1" fill="#e0a070"/><rect x="2" y="4" width="1" height="1" fill="#e0a070"/><rect x="3" y="4" width="2" height="1" fill="#e6b188"/><rect x="5" y="4" width="3" height="1" fill="#e0a070"/><rect x="1" y="5" width="1" height="1" fill="#e0a070"/><rect x="2" y="5" width="1" height="1" fill="#e6b188"/><rect x="3" y="5" width="6" height="1" fill="#e0a070"/><rect x="1" y="6" width="1" height="1" fill="#e0a070"/><rect x="2" y="6" width="1" height="1" fill="#2b1d18"/><rect x="3" y="6" width="2" height="1" fill="#e0a070"/><rect x="5" y="6" width="1" height="1" fill="#2b1d18"/><rect x="6" y="6" width="2" height="1" fill="#e0a070"/><rect x="8" y="6" width="1" height="1" fill="#b1805b"/><rect x="1" y="7" width="1" height="1" fill="#f1aa8e"/><rect x="2" y="7" width="1" height="1" fill="#2b1d18"/><rect x="3" y="7" width="2" height="1" fill="#e0a070"/><rect x="5" y="7" width="1" height="1" fill="#2b1d18"/><rect x="6" y="7" width="1" height="1" fill="#f1aa8e"/><rect x="7" y="7" width="1" height="1" fill="#e0a070"/><rect x="8" y="7" width="1" height="1" fill="#b1805b"/><rect x="2" y="8" width="1" height="1" fill="#b1805b"/><rect x="3" y="8" width="4" height="1" fill="#e0a070"/><rect x="7" y="8" width="1" height="1" fill="#b1805b"/><rect x="2" y="9" width="2" height="1" fill="#876448"/><rect x="6" y="9" width="2" height="1" fill="#876448"/></g><g class="blink" style="animation-delay:0.5s"><rect x="0" y="7" width="1" height="3" fill="#ece7dd"/></g></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Working</span></div>
+          <div class="foot"><span>feat/db-viz</span><span>11m in this turn</span></div>
+          <div class="tray">
+            <div class="kid"><svg class="px" width="20" height="20" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><g class="bob" style="animation-delay:0.35s"><rect x="5" y="0" width="2" height="1" fill="#7fb0a8"/><rect x="5" y="1" width="1" height="1" fill="#8a7b6c"/><rect x="5" y="2" width="1" height="1" fill="#8a7b6c"/><rect x="3" y="3" width="4" height="1" fill="#d98a5f"/><rect x="2" y="4" width="1" height="1" fill="#d98a5f"/><rect x="3" y="4" width="2" height="1" fill="#e19f7a"/><rect x="5" y="4" width="3" height="1" fill="#d98a5f"/><rect x="1" y="5" width="1" height="1" fill="#d98a5f"/><rect x="2" y="5" width="1" height="1" fill="#e19f7a"/><rect x="3" y="5" width="6" height="1" fill="#d98a5f"/><rect x="1" y="6" width="2" height="1" fill="#d98a5f"/><rect x="3" y="6" width="1" height="1" fill="#2b1d18"/><rect x="4" y="6" width="2" height="1" fill="#d98a5f"/><rect x="6" y="6" width="1" height="1" fill="#2b1d18"/><rect x="7" y="6" width="1" height="1" fill="#d98a5f"/><rect x="8" y="6" width="1" height="1" fill="#ab6f4e"/><rect x="1" y="7" width="1" height="1" fill="#d98a5f"/><rect x="2" y="7" width="1" height="1" fill="#eea186"/><rect x="3" y="7" width="1" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#d98a5f"/><rect x="6" y="7" width="1" height="1" fill="#2b1d18"/><rect x="7" y="7" width="1" height="1" fill="#eea186"/><rect x="8" y="7" width="1" height="1" fill="#ab6f4e"/><rect x="2" y="8" width="1" height="1" fill="#ab6f4e"/><rect x="3" y="8" width="4" height="1" fill="#d98a5f"/><rect x="7" y="8" width="1" height="1" fill="#ab6f4e"/><rect x="2" y="9" width="2" height="1" fill="#84583f"/><rect x="6" y="9" width="2" height="1" fill="#84583f"/></g></svg><span>schema-explorer</span></div>
+            <div class="kid done"><span class="kid-fig"><svg class="px" width="20" height="20" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="2" height="1" fill="#7fb0a8"/><rect x="5" y="1" width="1" height="1" fill="#8a7b6c"/><rect x="5" y="2" width="1" height="1" fill="#8a7b6c"/><rect x="3" y="3" width="4" height="1" fill="#e0a070"/><rect x="2" y="4" width="1" height="1" fill="#e0a070"/><rect x="3" y="4" width="2" height="1" fill="#e6b188"/><rect x="5" y="4" width="3" height="1" fill="#e0a070"/><rect x="1" y="5" width="1" height="1" fill="#e0a070"/><rect x="2" y="5" width="1" height="1" fill="#e6b188"/><rect x="3" y="5" width="6" height="1" fill="#e0a070"/><rect x="1" y="6" width="2" height="1" fill="#e0a070"/><rect x="3" y="6" width="1" height="1" fill="#2b1d18"/><rect x="4" y="6" width="2" height="1" fill="#e0a070"/><rect x="6" y="6" width="1" height="1" fill="#2b1d18"/><rect x="7" y="6" width="1" height="1" fill="#e0a070"/><rect x="8" y="6" width="1" height="1" fill="#b1805b"/><rect x="1" y="7" width="1" height="1" fill="#e0a070"/><rect x="2" y="7" width="1" height="1" fill="#f1aa8e"/><rect x="3" y="7" width="1" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#e0a070"/><rect x="6" y="7" width="1" height="1" fill="#2b1d18"/><rect x="7" y="7" width="1" height="1" fill="#f1aa8e"/><rect x="8" y="7" width="1" height="1" fill="#b1805b"/><rect x="2" y="8" width="1" height="1" fill="#b1805b"/><rect x="3" y="8" width="4" height="1" fill="#e0a070"/><rect x="7" y="8" width="1" height="1" fill="#b1805b"/><rect x="2" y="9" width="2" height="1" fill="#876448"/><rect x="6" y="9" width="2" height="1" fill="#876448"/></svg><svg class="check" width="10" height="8" viewBox="0 0 5 4" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="1" height="1" fill="#a9b98a"/><rect x="3" y="1" width="1" height="1" fill="#a9b98a"/><rect x="0" y="2" width="1" height="1" fill="#a9b98a"/><rect x="2" y="2" width="1" height="1" fill="#a9b98a"/><rect x="1" y="3" width="1" height="1" fill="#a9b98a"/></svg></span><span>chart-builder</span></div>
+          </div>
+        </article>
+        <article class="card idle">
+          
+          <div class="card-top">
+            <h3 class="title">Dashboard as MCP</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="2" height="1" fill="#b0ada6"/><rect x="3" y="1" width="4" height="1" fill="#627876"/><rect x="2" y="2" width="6" height="1" fill="#627876"/><rect x="2" y="3" width="6" height="1" fill="#4f6361"/><rect x="2" y="4" width="1" height="1" fill="#74524a"/><rect x="3" y="4" width="2" height="1" fill="#836760"/><rect x="5" y="4" width="3" height="1" fill="#74524a"/><rect x="1" y="5" width="1" height="1" fill="#74524a"/><rect x="2" y="5" width="1" height="1" fill="#836760"/><rect x="3" y="5" width="6" height="1" fill="#74524a"/><rect x="1" y="6" width="7" height="1" fill="#74524a"/><rect x="8" y="6" width="1" height="1" fill="#5f453f"/><rect x="1" y="7" width="1" height="1" fill="#74524a"/><rect x="2" y="7" width="2" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#74524a"/><rect x="6" y="7" width="2" height="1" fill="#2b1d18"/><rect x="8" y="7" width="1" height="1" fill="#5f453f"/><rect x="2" y="8" width="1" height="1" fill="#5f453f"/><rect x="3" y="8" width="4" height="1" fill="#74524a"/><rect x="7" y="8" width="1" height="1" fill="#5f453f"/><rect x="2" y="9" width="2" height="1" fill="#4e3b36"/><rect x="6" y="9" width="2" height="1" fill="#4e3b36"/></svg><svg class="zz" width="16" height="14" viewBox="0 0 8 7" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="3" height="1" fill="#a49d90"/><rect x="6" y="1" width="1" height="1" fill="#a49d90"/><rect x="5" y="2" width="3" height="1" fill="#a49d90"/><rect x="0" y="3" width="4" height="1" fill="#a49d90"/><rect x="2" y="4" width="1" height="1" fill="#a49d90"/><rect x="1" y="5" width="1" height="1" fill="#a49d90"/><rect x="0" y="6" width="4" height="1" fill="#a49d90"/></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Idle</span></div>
+          <div class="foot"><span>main</span><span>last active 1h ago</span></div>
+        </article>
+        <article class="card idle">
+          
+          <div class="card-top">
+            <h3 class="title">Agent setup 3D graph visualization</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="0" width="1" height="1" fill="#747f5b"/><rect x="6" y="0" width="2" height="1" fill="#747f5b"/><rect x="3" y="1" width="2" height="1" fill="#747f5b"/><rect x="5" y="1" width="1" height="1" fill="#575f42"/><rect x="5" y="2" width="1" height="1" fill="#575f42"/><rect x="3" y="3" width="4" height="1" fill="#927668"/><rect x="2" y="4" width="1" height="1" fill="#927668"/><rect x="3" y="4" width="2" height="1" fill="#9b8478"/><rect x="5" y="4" width="3" height="1" fill="#927668"/><rect x="1" y="5" width="1" height="1" fill="#927668"/><rect x="2" y="5" width="1" height="1" fill="#9b8478"/><rect x="3" y="5" width="6" height="1" fill="#927668"/><rect x="1" y="6" width="7" height="1" fill="#927668"/><rect x="8" y="6" width="1" height="1" fill="#766156"/><rect x="1" y="7" width="1" height="1" fill="#927668"/><rect x="2" y="7" width="2" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#927668"/><rect x="6" y="7" width="2" height="1" fill="#2b1d18"/><rect x="8" y="7" width="1" height="1" fill="#766156"/><rect x="2" y="8" width="1" height="1" fill="#766156"/><rect x="3" y="8" width="4" height="1" fill="#927668"/><rect x="7" y="8" width="1" height="1" fill="#766156"/><rect x="2" y="9" width="2" height="1" fill="#5e4f47"/><rect x="6" y="9" width="2" height="1" fill="#5e4f47"/></svg><svg class="zz" width="16" height="14" viewBox="0 0 8 7" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="3" height="1" fill="#a49d90"/><rect x="6" y="1" width="1" height="1" fill="#a49d90"/><rect x="5" y="2" width="3" height="1" fill="#a49d90"/><rect x="0" y="3" width="4" height="1" fill="#a49d90"/><rect x="2" y="4" width="1" height="1" fill="#a49d90"/><rect x="1" y="5" width="1" height="1" fill="#a49d90"/><rect x="0" y="6" width="4" height="1" fill="#a49d90"/></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Idle</span></div>
+          <div class="foot"><span>main</span><span>last active 5h ago</span></div>
+        </article>
+        <article class="card idle">
+          
+          <div class="card-top">
+            <h3 class="title">trying to analyze the progression shown</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="2" width="1" height="1" fill="#84696f"/><rect x="9" y="2" width="1" height="1" fill="#84696f"/><rect x="3" y="3" width="2" height="1" fill="#9b8474"/><rect x="5" y="3" width="2" height="1" fill="#84696f"/><rect x="7" y="3" width="1" height="1" fill="#614c52"/><rect x="8" y="3" width="2" height="1" fill="#84696f"/><rect x="2" y="4" width="1" height="1" fill="#9b8474"/><rect x="3" y="4" width="2" height="1" fill="#a29082"/><rect x="5" y="4" width="1" height="1" fill="#84696f"/><rect x="6" y="4" width="2" height="1" fill="#9b8474"/><rect x="9" y="4" width="1" height="1" fill="#84696f"/><rect x="1" y="5" width="1" height="1" fill="#9b8474"/><rect x="2" y="5" width="1" height="1" fill="#a29082"/><rect x="3" y="5" width="6" height="1" fill="#9b8474"/><rect x="1" y="6" width="7" height="1" fill="#9b8474"/><rect x="8" y="6" width="1" height="1" fill="#7d6c5f"/><rect x="1" y="7" width="1" height="1" fill="#9b8474"/><rect x="2" y="7" width="2" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#9b8474"/><rect x="6" y="7" width="2" height="1" fill="#2b1d18"/><rect x="8" y="7" width="1" height="1" fill="#7d6c5f"/><rect x="2" y="8" width="1" height="1" fill="#7d6c5f"/><rect x="3" y="8" width="4" height="1" fill="#9b8474"/><rect x="7" y="8" width="1" height="1" fill="#7d6c5f"/><rect x="2" y="9" width="2" height="1" fill="#63574d"/><rect x="6" y="9" width="2" height="1" fill="#63574d"/></svg><svg class="zz" width="16" height="14" viewBox="0 0 8 7" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="3" height="1" fill="#a49d90"/><rect x="6" y="1" width="1" height="1" fill="#a49d90"/><rect x="5" y="2" width="3" height="1" fill="#a49d90"/><rect x="0" y="3" width="4" height="1" fill="#a49d90"/><rect x="2" y="4" width="1" height="1" fill="#a49d90"/><rect x="1" y="5" width="1" height="1" fill="#a49d90"/><rect x="0" y="6" width="4" height="1" fill="#a49d90"/></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Idle</span></div>
+          <div class="foot"><span>main</span><span>last active 2d ago</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="zone z-broad">
+      <div class="zone-head"><i></i>sailcloth-io<span class="n">1</span></div>
+      <div class="cards">
+        <article class="card idle">
+          
+          <div class="card-top">
+            <h3 class="title">Deploy changes</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="1" width="1" height="1" fill="#917c4f"/><rect x="4" y="1" width="1" height="1" fill="#a6946e"/><rect x="5" y="1" width="2" height="1" fill="#917c4f"/><rect x="2" y="2" width="2" height="1" fill="#917c4f"/><rect x="4" y="2" width="1" height="1" fill="#a6946e"/><rect x="5" y="2" width="3" height="1" fill="#917c4f"/><rect x="1" y="3" width="8" height="1" fill="#75633f"/><rect x="2" y="4" width="1" height="1" fill="#927668"/><rect x="3" y="4" width="2" height="1" fill="#9b8478"/><rect x="5" y="4" width="3" height="1" fill="#927668"/><rect x="1" y="5" width="1" height="1" fill="#927668"/><rect x="2" y="5" width="1" height="1" fill="#9b8478"/><rect x="3" y="5" width="6" height="1" fill="#927668"/><rect x="1" y="6" width="7" height="1" fill="#927668"/><rect x="8" y="6" width="1" height="1" fill="#766156"/><rect x="1" y="7" width="1" height="1" fill="#927668"/><rect x="2" y="7" width="2" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#927668"/><rect x="6" y="7" width="2" height="1" fill="#2b1d18"/><rect x="8" y="7" width="1" height="1" fill="#766156"/><rect x="2" y="8" width="1" height="1" fill="#766156"/><rect x="3" y="8" width="4" height="1" fill="#927668"/><rect x="7" y="8" width="1" height="1" fill="#766156"/><rect x="2" y="9" width="2" height="1" fill="#5e4f47"/><rect x="6" y="9" width="2" height="1" fill="#5e4f47"/></svg><svg class="zz" width="16" height="14" viewBox="0 0 8 7" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="3" height="1" fill="#a49d90"/><rect x="6" y="1" width="1" height="1" fill="#a49d90"/><rect x="5" y="2" width="3" height="1" fill="#a49d90"/><rect x="0" y="3" width="4" height="1" fill="#a49d90"/><rect x="2" y="4" width="1" height="1" fill="#a49d90"/><rect x="1" y="5" width="1" height="1" fill="#a49d90"/><rect x="0" y="6" width="4" height="1" fill="#a49d90"/></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Idle</span></div>
+          <div class="foot"><span>main</span><span>last active 40m ago</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="zone z-none">
+      <div class="zone-head"><i></i>No folder<span class="n">1</span></div>
+      <div class="cards">
+        <article class="card working selected" aria-current="true">
+          <div class="bubble">Laying out visual directions</div>
+          <div class="card-top">
+            <h3 class="title">System discussion with friend notes</h3>
+            <div class="sprite"><svg class="px " width="40" height="40" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><g class="bob" style="animation-delay:0.9s"><rect x="3" y="2" width="4" height="1" fill="#6d6276"/><rect x="2" y="3" width="1" height="1" fill="#6d6276"/><rect x="3" y="3" width="4" height="1" fill="#c8674a"/><rect x="7" y="3" width="1" height="1" fill="#6d6276"/><rect x="1" y="4" width="2" height="1" fill="#8f8296"/><rect x="3" y="4" width="2" height="1" fill="#d38369"/><rect x="5" y="4" width="2" height="1" fill="#c8674a"/><rect x="7" y="4" width="2" height="1" fill="#8f8296"/><rect x="1" y="5" width="1" height="1" fill="#a99cb0"/><rect x="2" y="5" width="1" height="1" fill="#8f8296"/><rect x="3" y="5" width="4" height="1" fill="#c8674a"/><rect x="7" y="5" width="1" height="1" fill="#8f8296"/><rect x="8" y="5" width="1" height="1" fill="#a99cb0"/><rect x="1" y="6" width="1" height="1" fill="#c8674a"/><rect x="2" y="6" width="1" height="1" fill="#2b1d18"/><rect x="3" y="6" width="2" height="1" fill="#c8674a"/><rect x="5" y="6" width="1" height="1" fill="#2b1d18"/><rect x="6" y="6" width="2" height="1" fill="#c8674a"/><rect x="8" y="6" width="1" height="1" fill="#9e553e"/><rect x="1" y="7" width="1" height="1" fill="#e6917d"/><rect x="2" y="7" width="1" height="1" fill="#2b1d18"/><rect x="3" y="7" width="2" height="1" fill="#c8674a"/><rect x="5" y="7" width="1" height="1" fill="#2b1d18"/><rect x="6" y="7" width="1" height="1" fill="#e6917d"/><rect x="7" y="7" width="1" height="1" fill="#c8674a"/><rect x="8" y="7" width="1" height="1" fill="#9e553e"/><rect x="2" y="8" width="1" height="1" fill="#9e553e"/><rect x="3" y="8" width="4" height="1" fill="#c8674a"/><rect x="7" y="8" width="1" height="1" fill="#9e553e"/><rect x="2" y="9" width="2" height="1" fill="#7a4434"/><rect x="6" y="9" width="2" height="1" fill="#7a4434"/></g><g class="blink" style="animation-delay:0.9s"><rect x="0" y="7" width="1" height="3" fill="#ece7dd"/></g></svg></div>
+          </div>
+          <div class="status"><i class="mark"></i><span>Working</span></div>
+          <div class="foot"><span></span><span>1m in this turn</span></div>
+        </article>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<aside class="panel" aria-label="Selected session">
+  <div class="p-head">
+    <svg class="px " width="80" height="80" viewBox="0 0 10 10" shape-rendering="crispEdges" aria-hidden="true"><g class="bob" style="animation-delay:0.9s"><rect x="3" y="2" width="4" height="1" fill="#6d6276"/><rect x="2" y="3" width="1" height="1" fill="#6d6276"/><rect x="3" y="3" width="4" height="1" fill="#c8674a"/><rect x="7" y="3" width="1" height="1" fill="#6d6276"/><rect x="1" y="4" width="2" height="1" fill="#8f8296"/><rect x="3" y="4" width="2" height="1" fill="#d38369"/><rect x="5" y="4" width="2" height="1" fill="#c8674a"/><rect x="7" y="4" width="2" height="1" fill="#8f8296"/><rect x="1" y="5" width="1" height="1" fill="#a99cb0"/><rect x="2" y="5" width="1" height="1" fill="#8f8296"/><rect x="3" y="5" width="4" height="1" fill="#c8674a"/><rect x="7" y="5" width="1" height="1" fill="#8f8296"/><rect x="8" y="5" width="1" height="1" fill="#a99cb0"/><rect x="1" y="6" width="1" height="1" fill="#c8674a"/><rect x="2" y="6" width="1" height="1" fill="#2b1d18"/><rect x="3" y="6" width="2" height="1" fill="#c8674a"/><rect x="5" y="6" width="1" height="1" fill="#2b1d18"/><rect x="6" y="6" width="2" height="1" fill="#c8674a"/><rect x="8" y="6" width="1" height="1" fill="#9e553e"/><rect x="1" y="7" width="1" height="1" fill="#e6917d"/><rect x="2" y="7" width="1" height="1" fill="#2b1d18"/><rect x="3" y="7" width="2" height="1" fill="#c8674a"/><rect x="5" y="7" width="1" height="1" fill="#2b1d18"/><rect x="6" y="7" width="1" height="1" fill="#e6917d"/><rect x="7" y="7" width="1" height="1" fill="#c8674a"/><rect x="8" y="7" width="1" height="1" fill="#9e553e"/><rect x="2" y="8" width="1" height="1" fill="#9e553e"/><rect x="3" y="8" width="4" height="1" fill="#c8674a"/><rect x="7" y="8" width="1" height="1" fill="#9e553e"/><rect x="2" y="9" width="2" height="1" fill="#7a4434"/><rect x="6" y="9" width="2" height="1" fill="#7a4434"/></g><g class="blink" style="animation-delay:0.9s"><rect x="0" y="7" width="1" height="3" fill="#ece7dd"/></g></svg>
+    <div>
+      <h2 class="p-title">System discussion with friend notes</h2>
+      <div class="p-state"><i class="mark"></i>Working</div>
+    </div>
+  </div>
+
+  <dl class="meta">
+    <dt>Folder</dt><dd>No folder</dd>
+    <dt>Model</dt><dd>Fable 5.2</dd>
+    <dt>Started</dt><dd>17:42</dd>
+    <dt>State</dt><dd>Working, 1m</dd>
+  </dl>
+
+  <div>
+    <div class="sec-label">You last said</div>
+    <div class="you"><p>Standalone canvas</p></div>
+  </div>
+
+  <div>
+    <div class="sec-label">Its last answer</div>
+    <div class="answer">
+      <span class="face"><svg class="px " width="20" height="18" viewBox="0 0 10 9" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="2" width="4" height="1" fill="#6d6276"/><rect x="2" y="3" width="1" height="1" fill="#6d6276"/><rect x="3" y="3" width="4" height="1" fill="#c8674a"/><rect x="7" y="3" width="1" height="1" fill="#6d6276"/><rect x="1" y="4" width="2" height="1" fill="#8f8296"/><rect x="3" y="4" width="2" height="1" fill="#d38369"/><rect x="5" y="4" width="2" height="1" fill="#c8674a"/><rect x="7" y="4" width="2" height="1" fill="#8f8296"/><rect x="1" y="5" width="1" height="1" fill="#a99cb0"/><rect x="2" y="5" width="1" height="1" fill="#8f8296"/><rect x="3" y="5" width="4" height="1" fill="#c8674a"/><rect x="7" y="5" width="1" height="1" fill="#8f8296"/><rect x="8" y="5" width="1" height="1" fill="#a99cb0"/><rect x="1" y="6" width="2" height="1" fill="#c8674a"/><rect x="3" y="6" width="1" height="1" fill="#2b1d18"/><rect x="4" y="6" width="2" height="1" fill="#c8674a"/><rect x="6" y="6" width="1" height="1" fill="#2b1d18"/><rect x="7" y="6" width="1" height="1" fill="#c8674a"/><rect x="8" y="6" width="1" height="1" fill="#9e553e"/><rect x="1" y="7" width="1" height="1" fill="#c8674a"/><rect x="2" y="7" width="1" height="1" fill="#e6917d"/><rect x="3" y="7" width="1" height="1" fill="#2b1d18"/><rect x="4" y="7" width="2" height="1" fill="#c8674a"/><rect x="6" y="7" width="1" height="1" fill="#2b1d18"/><rect x="7" y="7" width="1" height="1" fill="#e6917d"/><rect x="8" y="7" width="1" height="1" fill="#9e553e"/><rect x="2" y="8" width="1" height="1" fill="#9e553e"/><rect x="3" y="8" width="4" height="1" fill="#c8674a"/><rect x="7" y="8" width="1" height="1" fill="#9e553e"/><rect x="2" y="9" width="2" height="1" fill="#7a4434"/><rect x="6" y="9" width="2" height="1" fill="#7a4434"/></svg></span>
+      <div class="msg">
+        <p>The check is back, and it narrows the choice to two real options.</p>
+        <p>I recommend the standalone canvas because all 11 of your live sessions are desktop-app sessions; the other route makes you change how you work before you get any value.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <span class="btn primary">Open in Claude</span>
+    <span class="btn ghost">Copy resume command</span>
+  </div>
+</aside>
+
+</body>
+</html>

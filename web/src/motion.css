@@ -1,0 +1,533 @@
+/* The motion layer: how everything on the canvas arrives, answers and leaves. Loaded last, so it
+   sits on top of app.css, chat.css and overlays.css. The rules it follows, and how to add to it,
+   are in docs/motion.md; the tokens (--ease-*, --t-*, --stagger) are in theme.css.
+
+   Three parts:
+   1. Feel    — what controls look like at rest, on hover, pressed and focused. Always on.
+   2. Motion  — entrances, exits, travel and the few loops. Only without "reduce motion".
+   3. Quiet   — what stops while the reader is unreachable. */
+
+/* ================================ 1. Feel ================================ */
+
+/* The top bar's one primary action reads as a button, not as a label. */
+.tool.new-session { background: var(--panel); color: var(--foreground);
+  box-shadow: inset 0 0 0 1px var(--border), inset 0 1px 0 oklch(1 0 0 / 5%); }
+.tool.new-session:hover { background: var(--accent); box-shadow: inset 0 0 0 1px var(--control-border), inset 0 1px 0 oklch(1 0 0 / 8%); }
+
+/* Light buttons (Send, Start) carry a soft glow once they can be pressed; amber ones an amber one. */
+.send.is-ready, .send.is-stop, dialog .t-btn.ns-start.is-ready { box-shadow: 0 6px 18px -8px oklch(1 0 0 / 55%); }
+.send.is-ready:hover, dialog .t-btn.ns-start.is-ready:hover { background: var(--foreground); box-shadow: 0 8px 22px -8px oklch(1 0 0 / 75%); }
+.t-btn.allow { box-shadow: 0 6px 18px -10px var(--orb-warning); }
+.t-btn.allow:hover:not(:disabled) { box-shadow: 0 8px 24px -8px var(--orb-warning); }
+.t-btn.outline:hover:not(:disabled), .menu-btn:not(.danger):hover, .rail-new:hover { border-color: color-mix(in oklch, var(--foreground) 55%, var(--control-border)); }
+.menu-btn.danger:hover { box-shadow: 0 6px 18px -8px var(--pill-negative); }
+.jump:hover { background: color-mix(in oklch, var(--panel) 60%, transparent); }
+.jump:hover kbd, .tool.new-session:hover kbd { color: var(--foreground); border-color: var(--control-border); }
+
+/* Fields: the caret and the focus ring are the selection colour; the ring is soft and wide. */
+.cp-field, .zone-rename, .menu-new input, .t-q-input, .pv-address, .jump-input { caret-color: var(--highlight); }
+.composer:focus-within { border-color: color-mix(in oklch, var(--highlight) 55%, var(--control-border));
+  box-shadow: var(--card-shadow), 0 0 0 3px color-mix(in oklch, var(--highlight) 16%, transparent); }
+.composer.is-blocked:focus-within { box-shadow: none; border-color: var(--card-border); }
+.composer:hover:not(:focus-within):not(.is-blocked) { border-color: var(--control-border); }
+.menu-new input:focus-visible, .t-q-input:focus-visible, .zone-rename:focus-visible, .pv-address:focus {
+  outline: none; border-color: color-mix(in oklch, var(--highlight) 70%, var(--control-border));
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--highlight) 20%, transparent); }
+.ns-folder:hover, .rail-filter:hover { background: color-mix(in oklch, var(--panel) 50%, transparent); }
+
+/* Dialogs sit on a dimmed, slightly out-of-focus canvas. */
+dialog.ns::backdrop, dialog.pf::backdrop, dialog.git-review::backdrop { backdrop-filter: blur(3px); }
+
+/* A hint of project color behind the label and just inside the board's rim. */
+.zone::after {
+  background-image: radial-gradient(360px 104px at 20px 0,
+    color-mix(in srgb, var(--zone-hue) var(--zone-glow-strength), transparent), transparent);
+}
+.zone::before {
+  content: ""; position: absolute; inset: 2px; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 16px color-mix(in srgb, var(--zone-hue) var(--zone-edge-glow-strength), transparent);
+}
+
+/* A zone under a dragged card, and a zone in the hand, are a touch larger than life. */
+.zone.is-drop { scale: 1.012; }
+.zone.is-moving { scale: 1.008; }
+
+/* Selection takes over the state border; the label still carries the session state. */
+.card.is-selected, .card.is-selected:hover { border-color: var(--selection-edge); }
+@media (forced-colors: active) {
+  .card.is-selected { outline: 2px solid Highlight; outline-offset: 1px; }
+}
+
+.cr-gaze, .cr-question { display: none; }
+
+/* ================================ 2. Motion ================================ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-note-appearance="holographic"] :is(.board-note, .thread-note):hover::after {
+    animation: note-reflection var(--t-note-reflection) ease-in-out;
+  }
+  @keyframes note-reflection { 50% { background-position: -25% 0; } }
+
+
+  /* ---------- controls: every hover fades, every press gives ---------- */
+  .tool, .menu-item, .menu-btn, .undo-close, .brief-tag, .brief-pages button, .avatar, .rail-new, .zone-new, .zone-files, .ex-icon, .ex-row, .ex-seg button,
+  .ns-seg-btn, .t-btn, .icon-btn, .cs-act, .cs-icon, .cs-back, .send, .picker, .pv-tab, .pv-follow, .pv-act, .pv-icon,
+  .pv-call, .rail-row, .t-tool, .t-thought, .t-older, .t-q-option, .img-nav, .jump-hit, .ns-folder, .rail-filter, .jump kbd, .tool kbd,
+  .git-action, .git-file, .git-group, .jv-toggle, .jv-fold, .jv-more, .log-button, .activity-log li button, .running-sessions button, .working-count,
+  .jump-dismiss, .zone-edit, .zone-remove, .zone-choice, .ms-all, .ms-models label, .acp-row, .t-activity, .t-q-pager button, .file-open, .file-remove,
+  .pv-placement, .pv-recovery button, .lk-row, .us-turn, .tn-source {
+    transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out),
+      box-shadow var(--t-base) var(--ease-out), opacity var(--t-fast) var(--ease-out), scale var(--t-base) var(--ease-spring), translate var(--t-base) var(--ease-spring);
+  }
+  /* Small targets give more than wide rows do. */
+  :is(.tool, .menu-btn, .undo-close, .avatar, .zone-new, .zone-files, .ex-icon, .ns-seg-btn, .t-btn, .icon-btn, .cs-act, .cs-icon, .cs-back, .send,
+    .pv-tab, .pv-follow, .pv-act, .pv-icon, .t-older, .img-nav, .brief-pages button, .ex-seg button, .git-action, .log-button,
+    .zone-edit, .ms-all, .t-q-pager button, .file-remove, .pv-recovery button):active:not(:disabled, [aria-disabled="true"]) { scale: 0.94; transition-duration: 60ms; }
+  :is(.menu-item:not(.is-static), .brief-tag, .rail-row, .rail-new, .pv-call, button.t-tool, .t-thought, .ex-row:not(.ex-sub), .git-file, .git-group,
+    .activity-log li button, .running-sessions button, .t-activity, button.us-turn):active { scale: 0.985; transition-duration: 60ms; }
+  .send.is-ready:hover, .send.is-stop:hover, dialog .t-btn.ns-start.is-ready:hover, .t-btn.allow:hover:not(:disabled) { translate: 0 -1px; }
+  /* Send wakes up when there is something to send; Stop breathes while a turn runs. */
+  .send.is-ready, dialog .t-btn.ns-start.is-ready { animation: wake var(--t-enter) var(--ease-spring); }
+  .send.is-stop svg { animation: breathe 1.6s ease-in-out infinite; }
+  .ns-seg-btn.is-on, .pv-tab.is-on, .ex-seg button.is-on { animation: settle var(--t-slow) var(--ease-spring); }
+  .pf-switch i { transition: transform 260ms var(--ease-spring), background-color var(--t-base) var(--ease-out); }
+
+  /* ---------- fields ---------- */
+  .composer { transition: border-color var(--t-base) var(--ease-out), box-shadow 240ms var(--ease-out), background-color var(--t-base) var(--ease-out); }
+  .menu-new input, .t-q-input, .zone-rename, .pv-address { transition: border-color var(--t-fast) var(--ease-out), box-shadow var(--t-base) var(--ease-out); }
+  .cp-field::placeholder { transition: opacity var(--t-base) var(--ease-out), translate var(--t-slow) var(--ease-snap); }
+  .cp-field:focus::placeholder { opacity: 0.55; translate: 3px 0; }
+  .jump-dialog[open] { animation: dialog-in var(--t-slow) var(--ease-snap); }
+  .jump-dialog::backdrop { animation: fade-in var(--t-base) var(--ease-out); }
+  .zone-rename { animation: settle var(--t-base) var(--ease-spring); }
+
+  /* ---------- the board: zones ---------- */
+  /* A zone fades up to size where it stands; its place is the translate property, never animated here. */
+  .zone:not(.is-unplaced) { animation: zone-in 420ms var(--ease-snap) backwards; animation-delay: calc(min(var(--i, 0), 8) * 55ms); }
+  .zone { transition: translate 280ms var(--ease-snap), scale 220ms var(--ease-spring), opacity var(--t-base) var(--ease-out),
+      --earlier-open var(--fold-duration) var(--ease-fold); }
+  .zone.is-unplaced, .zone.is-placing { transition: none; }
+  /* While anything is dragged zones do not glide, but the lift and the drop ring still ease. */
+  .board.is-dragging .zone { transition: scale 220ms var(--ease-spring), box-shadow 200ms var(--ease-out), background-color 200ms var(--ease-out); }
+  .board.is-dragging.is-snapping .zone.is-moving { transition: translate 70ms var(--ease-out), scale 220ms var(--ease-spring), box-shadow 200ms var(--ease-out); }
+  .zone-label .n { animation: pop var(--t-enter) var(--ease-spring); }
+  .zone-label .zone-mark { transition: scale var(--t-base) var(--ease-spring); }
+  .zone-label:hover .zone-mark { scale: 1.3; }
+  .zone-new:hover { scale: 1.12; }
+
+  /* ---------- the board: cards ---------- */
+  /* Cards land one after another, a little after their zone. */
+  .card { animation: card-in var(--t-enter) var(--ease-spring) backwards; animation-delay: calc(90ms + min(var(--i, 0), 10) * var(--stagger));
+    transition: transform 220ms var(--ease-spring), translate 260ms var(--ease-snap), scale 200ms var(--ease-spring), rotate 200ms var(--ease-spring),
+      box-shadow var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out), background-color var(--t-base) var(--ease-out), opacity var(--t-base) var(--ease-out); }
+  .card:active:not(.is-dragging) { scale: 0.985; }
+  /* In the hand: lifted, tilted, and following the pointer with no lag (translate is not eased). */
+  .card.is-dragging { scale: 1.04; rotate: 1.4deg; transform: none;
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 8%), 0 34px 70px -22px oklch(0 0 0 / 90%);
+    transition: scale 200ms var(--ease-spring), rotate 200ms var(--ease-spring), box-shadow 200ms var(--ease-out); }
+  /* A card that only moved (a new column, another zone) is drawn in a new element, but it has been
+     here all along: canvas/cardGlide.ts glides it from its old place and marks it, and here it skips
+     its entrance and the cues it already played. Only a card that is really new enters. */
+  .card[data-moved] { animation-name: none; }
+  .card[data-quiet~="needs"].is-needs::after, .card[data-quiet~="done"].is-done::after, [data-still] { animation: none; }
+  /* Only a card that is really gone exits: its copy fades where it stood. */
+  .board > .card.is-leaving { position: absolute; z-index: 4; margin: 0; pointer-events: none; animation: card-out var(--t-exit) var(--ease-in) forwards; }
+  .card.is-leaving::before, .card.is-leaving::after { animation: none; opacity: 0; }
+  /* All cards of the same provider share the loop and the strip of poses used on hover. */
+  .cr[data-provider="codex"] { --portrait-loop: url('./creature/codex-idle.webp'); --portrait-gaze: url('./creature/codex-idle-gaze.webp'); }
+  .cr[data-provider="claude"] { --portrait-loop: url('./creature/claude-idle.webp'); --portrait-gaze: url('./creature/claude-idle-gaze.webp'); }
+  .cr[data-provider="orchestrator"] { --portrait-loop: url('./creature/orchestrator-idle.webp'); --portrait-gaze: url('./creature/orchestrator-idle-gaze.webp'); }
+  .cr[data-provider="codex"][data-state="working"] { --portrait-loop: url('./creature/codex-working.webp'); --portrait-gaze: url('./creature/codex-working-gaze.webp'); }
+  .cr[data-provider="claude"][data-state="working"] { --portrait-loop: url('./creature/claude-working.webp'); --portrait-gaze: url('./creature/claude-working-gaze.webp'); }
+  .cr[data-provider="orchestrator"][data-state="working"] { --portrait-loop: url('./creature/orchestrator-working.webp'); --portrait-gaze: url('./creature/orchestrator-working-gaze.webp'); }
+  .cr .cr-still { content: var(--portrait-loop); transition: visibility 0s var(--t-base); }
+  .cr .cr-gaze { display: block; z-index: 1; overflow: hidden; visibility: hidden;
+    transition: visibility 0s var(--t-base); }
+  .cr .cr-gaze::before { content: ""; display: block; width: 1300%; height: 100%;
+    background: var(--portrait-gaze) 0 0 / 100% 100% no-repeat;
+    transition: transform var(--t-base) steps(12, end); }
+  .cr[data-watching] .cr-gaze { visibility: visible; transition-delay: 0s; }
+  .cr[data-watching] .cr-gaze::before { transform: translateX(calc(-100% * 12 / 13)); }
+  .cr[data-watching] .cr-still { visibility: hidden; transition-delay: 0s; }
+  .cr .cr-attention { z-index: 2; }
+  .cr .cr-question {
+    display: block; position: absolute; left: 69%; top: -18%; width: 23%; height: 33%;
+    color: var(--foreground); pointer-events: none; opacity: 0;
+    transform-origin: 50% 100%; transform: translate(-42%, 55%) rotate(-16deg) scale(.3);
+    transition: opacity var(--t-fast) var(--ease-out), transform var(--t-base) var(--ease-out);
+  }
+  /* Follow the working head's leftward shift. Its canvas hides the start of the rise. */
+  .cr[data-state="working"] .cr-question { left: 59%; }
+  .cr[data-provider="orchestrator"] .cr-question { top: -14%; }
+  .cr[data-watching] .cr-question {
+    opacity: 1; transform: rotate(9deg);
+    transition: opacity var(--t-base) var(--ease-out) var(--gaze-dwell),
+      transform var(--t-enter) var(--ease-spring) var(--gaze-dwell);
+  }
+  /* The line saying what a session is doing right now slides in each time it changes. */
+  .run-step.is-current { animation: step-in var(--t-slow) var(--ease-snap); }
+  .sub-state .tick { stroke-dasharray: 12; animation: draw 360ms var(--ease-out) backwards; }
+  .request-state .card-icon { animation: pop 420ms var(--ease-spring) backwards; animation-delay: calc(240ms + min(var(--i, 0), 10) * var(--stagger)); }
+
+  /* Needs you: one ripple when the request arrives, then a slow amber halo for as long as it waits.
+     Done: one green ripple, then still. Both are pseudo-elements moved by opacity and scale only. */
+  .card.is-needs:where(:not(.is-selected))::before, .card.is-needs:where(:not(.is-selected))::after,
+  .card.is-done:where(:not(.is-selected))::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; }
+  .card.is-needs::before { box-shadow: 0 0 0 1px var(--needs-edge), 0 0 26px -4px var(--needs-glow);
+    animation: halo 3.2s ease-in-out infinite; }
+  .card.is-needs::after, .card.is-done::after { border: 1.5px solid var(--orb-warning); opacity: 0;
+    animation: ripple 900ms var(--ease-out) backwards; animation-delay: calc(260ms + min(var(--i, 0), 10) * var(--stagger)); }
+  .card.is-done::after { border-color: var(--live); }
+  .card.is-dragging::before, .card.is-dragging::after { animation: none; opacity: 0; }
+
+  .canvas-hint { animation: fade-in 600ms var(--ease-out) 200ms backwards; }
+
+  /* ---------- top bar and the waiting row ---------- */
+  .counts .wait { animation: pop var(--t-enter) var(--ease-spring); }
+  .counts .wait i { animation: beat 2.4s var(--ease-out) infinite; }
+  .brief h2 span { animation: pop var(--t-enter) var(--ease-spring); }
+  .brief-tag { animation: drop-in var(--t-enter) var(--ease-snap) backwards; }
+  .brief-tag:nth-child(2) { animation-delay: 50ms; }
+  .brief-tag:nth-child(3) { animation-delay: 100ms; }
+  .brief-tag:hover { translate: 0 -1px; }
+  .brief-icon { transition: scale var(--t-base) var(--ease-spring), rotate var(--t-base) var(--ease-spring); }
+  .brief-tag:hover .brief-icon { scale: 1.1; rotate: -6deg; }
+  /* The orb's spark blinks while a request (not just finished work) is waiting. */
+  .brief:has(.brief-tag:not(.is-done)) .orb .spark { animation: blink 1.2s steps(1, end) infinite; }
+  .conn { animation: fade-in var(--t-slow) var(--ease-out); }
+  .conn i { animation: breathe 1.4s ease-in-out infinite; }
+
+  /* ---------- menus, toast ---------- */
+  .menu { transform-origin: top left; animation: menu-in 170ms var(--ease-snap); }
+  .zones-menu { transform-origin: top right; }
+  /* The corner's activity log and the top bar's running sessions are popovers: they open as menus
+     do, from the control that opened them, and the log's entries follow one another in. */
+  .activity-log:popover-open { transform-origin: top left; animation: menu-in 170ms var(--ease-snap); }
+  .running-sessions:popover-open { transform-origin: top right; animation: menu-in 170ms var(--ease-snap); }
+  .activity-log li { animation: reveal var(--t-slow) var(--ease-snap) backwards; animation-delay: calc(min(var(--i, 0), 8) * var(--stagger-row)); }
+  .menu-confirm, .menu-new { animation: fade-in var(--t-base) var(--ease-out); }
+  .jump-hit.is-active { transition: none; }
+  .undo-toast { animation: toast-pop var(--t-enter) var(--ease-spring); }
+
+  .is-thread-target { transition: outline-color var(--t-fast) var(--ease-out); }
+
+  /* ---------- dialogs: rise in, sink out ---------- */
+  .ns-panel, .pf-sheet { animation: dialog-in 300ms var(--ease-spring); }
+  dialog.ns::backdrop, dialog.pf::backdrop, dialog.img-viewer::backdrop { animation: fade-in 220ms var(--ease-out); }
+  dialog.is-closing .ns-panel, dialog.is-closing .pf-sheet { animation: dialog-out var(--t-exit) var(--ease-in) forwards; }
+  dialog.is-closing::backdrop { animation: fade-out var(--t-exit) var(--ease-in) forwards; }
+  .pf-panel { animation: rise var(--t-enter) var(--ease-snap) 60ms backwards; }
+  .pf-panel + .pf-panel { animation-delay: 120ms; }
+  /* Settings → Models: a pair added rises into its list; a removed one fades before the list closes up. */
+  .ms-pair.is-new, .ms-adder, .acp-form { animation: rise var(--t-slow) var(--ease-snap); }
+  /* Settings → Usage: the bars beside the one under the pointer dim, they do not blink. */
+  .us-bar { transition: opacity var(--t-fast) var(--ease-out); }
+  .ms-pair.is-closing { animation: card-out var(--t-exit) var(--ease-in) forwards; pointer-events: none; }
+  .ms-remove, .ms-add { transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), scale var(--t-base) var(--ease-spring); }
+  :is(.ms-remove, .ms-add):active:not(:disabled) { scale: 0.94; transition-duration: 60ms; }
+  .pf-bar i { transform-origin: left; animation: grow 700ms var(--ease-snap) 200ms backwards; }
+  .img-stage img { animation: img-pop 240ms var(--ease-spring); }
+  .img-bar { animation: rise var(--t-slow) var(--ease-snap) 80ms backwards; }
+  .cp-images li { animation: wake var(--t-slow) var(--ease-spring); }
+
+  /* ---------- the chat ---------- */
+  /* The panel's column opens and closes (--panel-open, app.css): that slides the panel in from
+     the page's right edge and narrows the canvas beside it, in one movement; out is shorter and
+     accelerates away. On top of the slide the panel comes into focus. Its entrance plays only
+     when the panel opens (.is-panel-opening, App.tsx), its exit on the copy that lingers
+     (.is-closing, useLingering.ts). Full screen only fades (a native view lies over it). */
+  .app { transition: --panel-open var(--t-panel-exit) var(--ease-in); }
+  .app.has-panel { transition: --panel-open var(--t-panel) var(--ease-snap); }
+  .app.is-panel-opening > .chat-screen.is-panel { animation: panel-in var(--t-panel) var(--ease-snap) backwards; }
+  .chat-screen.is-panel.is-closing { animation: panel-out var(--t-panel-exit) var(--ease-in) forwards; pointer-events: none; }
+  .chat-screen.is-full { animation: fade-in 200ms var(--ease-out); }
+  .chat-screen.is-full.is-closing { animation: fade-out var(--t-exit) var(--ease-in) forwards; pointer-events: none; }
+  /* Another chat taking the panel is new content in a panel that stays: its header fades in and
+     its conversation rises (both are keyed by the chat, ChatScreen.tsx). */
+  .chat-screen > .cs-bar { animation: fade-in var(--t-slow) var(--ease-out) backwards; }
+  .chat-screen > .desk { animation: rise var(--t-slow) var(--ease-snap) backwards; }
+
+  /* ---------- the preview ---------- */
+  /* Docked, it opens as the panel does: its width eases (--dock-open, chat.css), so the canvas
+     gives way as it comes and takes the room back as it goes. On the canvas or in a zone it is a
+     thing on the desk, and arrives and leaves as a card does. */
+  .app.is-preview-opening .preview-window.pv-left { animation: dock-in var(--t-panel) var(--ease-snap) backwards; }
+  .preview-window.pv-left.is-closing { animation: dock-out var(--t-panel-exit) var(--ease-in) forwards; pointer-events: none; }
+  /* Beside the chat (the header's toggle) it slides out from under the chat's edge, its page
+     following each frame, and back under it, shorter, when closed. A transition, not keyframes, so
+     a toggle pressed mid-way turns it round from where it is. */
+  .preview-window.pv-right { transition: --dock-open var(--t-panel) var(--ease-snap), opacity var(--t-base) var(--ease-out); }
+  @starting-style { .app.is-preview-opening .preview-window.pv-right { --dock-open: 0; opacity: 0; } }
+  .preview-window.pv-right.is-closing { --dock-open: 0; opacity: 0; pointer-events: none;
+    transition: --dock-open var(--t-panel-exit) var(--ease-in), opacity var(--t-panel-exit) var(--ease-in); }
+  .preview-window:is(.pv-canvas, .pv-board), .board-preview-row { animation: card-in var(--t-enter) var(--ease-spring) backwards; }
+  .preview-window:is(.pv-canvas, .pv-board).is-closing, .board-preview-row.is-closing { animation: card-out var(--t-exit) var(--ease-in) forwards; pointer-events: none; }
+  /* A board tile dropped in another zone is drawn there in a new element; it glides (FLIP in
+     PreviewWorkspace.tsx) rather than arriving again. */
+  .preview-window:is(.pv-board, .pv-canvas)[data-moved]:not(.is-closing) { animation-name: none; }
+  .zone .board-tile-slot { transition: translate var(--t-fast) var(--ease-snap); animation: fade-in var(--t-fast) var(--ease-out); }
+
+  /* ---------- the board: images (web/src/board) ---------- */
+  /* A new image lands as a card does; one only changing place (into a zone, out of one) is drawn
+     in a new element and glides there from the hand instead (FLIP in BoardImage.tsx), so it does
+     not arrive again. One taken off leaves as a card does. */
+  .board-image { animation: card-in var(--t-enter) var(--ease-spring) backwards;
+    transition: box-shadow var(--t-base) var(--ease-out), opacity var(--t-base) var(--ease-out), scale 200ms var(--ease-spring); }
+  .board-image[data-moved] { animation: none; }
+
+  .board-image.is-closing { animation: card-out var(--t-exit) var(--ease-in) forwards; pointer-events: none; }
+  /* Images in a zone make way for one in the hand as cards do; the one just dropped glides by FLIP. */
+  .zone .board-item-tile, .zone .board-tile, .board-threads .board-item-free { transition: translate var(--t-slow) var(--ease-snap); }
+  .zone .board-tile:has(.is-lifted) { transition: none; }
+  .zone .board-item-tile.is-dropped { transition: none; }
+  .bi-tools, .bi-resize { transition: opacity var(--t-fast) var(--ease-out); }
+  .bi-tool { transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), scale var(--t-base) var(--ease-spring); }
+  .bi-tool:active { scale: 0.94; transition-duration: 60ms; }
+  .bi-caption-field { animation: settle var(--t-base) var(--ease-spring); }
+  .board-item-ghost { animation: fade-in var(--t-fast) var(--ease-out); }
+  /* ---------- the board: notes (web/src/notes) ----------
+     A note arrives, glides and leaves exactly as a board image does (same keyframes, same FLIP). */
+  .board-note, .thread-note { animation: card-in var(--t-enter) var(--ease-spring) backwards;
+    transition: box-shadow var(--t-base) var(--ease-out), opacity var(--t-base) var(--ease-out), scale 200ms var(--ease-spring); }
+  .thread-note[data-moved], .board-note[data-moved] { animation: none; }
+  .board-note.is-lifted, .board-image.is-lifted { transition: none; }
+  .board-note.is-closing { animation: card-out var(--t-exit) var(--ease-in) forwards; pointer-events: none; }
+  .bn-tools, .bn-resize, .bn-pic-remove { transition: opacity var(--t-fast) var(--ease-out); }
+  .bn-swatches { transform-origin: top right; animation: menu-in 170ms var(--ease-snap); }
+  .bn-swatch { transition: scale var(--t-base) var(--ease-spring); }
+  .bn-swatch:hover { scale: 1.12; }
+  /* Its controls unfold under the handle and fold back; the chevron that closes them turns in. */
+  #pv-options { interpolate-size: allow-keywords;
+    transition: height var(--t-base) var(--ease-in), opacity var(--t-exit) var(--ease-in), display var(--t-base) allow-discrete; }
+  #pv-options:not([hidden]) { animation: unfold var(--t-slow) var(--ease-snap); }
+  #pv-options[hidden] { height: 0; opacity: 0; overflow: hidden; }
+  #pv-views:not([hidden]) { animation: fade-in var(--t-slow) var(--ease-out); }
+  .pv-handle .pv-icon[aria-expanded="true"] > svg { animation: turn-in var(--t-slow) var(--ease-spring); }
+  .pv-handle .pv-icon[aria-expanded="false"] > svg { animation: settle var(--t-base) var(--ease-spring); }
+
+  /* ---------- the canvas agent's orb becoming its panel (agent/morph.ts) ---------- */
+  /* While the layer flies, the button it left (or is coming home to) is unseen, and so is the
+     panel it is turning into: laid out, focused, but only its place. On landing the panel's
+     surface is simply there (the layer stood exactly on it) and its content fades in. */
+  /* Advance the dashboard globe one projected frame at a time. The repeated strip wraps at 240. */
+  .agent-globe::before, .agent-globe::after {
+    animation: globe-turn var(--globe-period, var(--t-globe-turn)) steps(240, end) infinite;
+  }
+  .agent-orb.is-working { --globe-period: var(--t-globe-working); }
+  .agent-orb.is-working::after { animation: agent-ring 2.4s var(--ease-out) infinite; }
+  @keyframes globe-turn { to { mask-position: calc(100% * 240 / 239) var(--globe-strip, 0%); } }
+  @keyframes agent-ring { 0% { transform: scale(0.9); opacity: 1; } 70%, 100% { transform: scale(1.35); opacity: 0; } }
+
+  .agent-btn.is-open .agent-orb { opacity: 0.28; }
+  .agent-btn .agent-orb { transition: opacity var(--t-slow) var(--ease-out); }
+  .app:is([data-morph="open"], [data-morph="close"], [data-morph="back"]) .agent-btn { opacity: 0; }
+  .app:not([data-morph="open"], [data-morph="close"], [data-morph="back"]) .agent-btn.is-open { transition: opacity var(--t-slow) var(--ease-out), border-color 160ms var(--ease-out), background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
+  .app:is([data-morph="open"], [data-morph="rest"]) > .chat-screen.is-agent { animation: none; }
+  .app[data-morph="open"] > .chat-screen.is-agent { background: transparent; border-color: transparent; box-shadow: none; }
+  .app[data-morph="open"] > .chat-screen.is-agent > * { opacity: 0; }
+  .app:not([data-morph="open"]) > .chat-screen.is-agent > :is(.cs-bar, .desk) { transition: opacity var(--t-base) var(--ease-out); }
+  /* Going home: the leaving panel stays where it stood while its column closes, bare of its
+     surface (the layer is that now), and its content fades before the layer has gathered. */
+  .app[data-morph="close"] > .chat-screen.is-agent.is-closing { position: fixed; z-index: 41; left: var(--morph-x); top: var(--morph-y); width: var(--morph-w); height: var(--morph-h);
+    margin: 0; animation: none; background: transparent; border-color: transparent; box-shadow: none; }
+  .app[data-morph="close"] > .chat-screen.is-agent.is-closing > * { animation: fade-out 90ms var(--ease-in) forwards; }
+  .app:is([data-morph="open"], [data-morph="back"], [data-morph="home"]) > .chat-screen.is-agent.is-closing { visibility: hidden; }
+  /* What arrives in the thread rises into place; your own message pops from the composer's corner. */
+  .thread-col > * { animation: rise var(--t-slow) var(--ease-snap) backwards; }
+  .thread-col > .t-you { transform-origin: bottom right; animation: bubble var(--t-enter) var(--ease-spring) backwards; }
+  .t-log > .t-tool { animation: step-in var(--t-slow) var(--ease-snap) backwards; }
+  .t-log > :not(.t-tool), .t-thought-text { animation: reveal var(--t-slow) var(--ease-snap) backwards; }
+  /* A running call's dot breathes until its result arrives; the row itself stays still. */
+  .t-tool .m .dot.working { animation: breathe 1.6s ease-in-out infinite; }
+  /* A request to approve arrives like a needs-you card: it settles, and rings once. */
+  .thread-col > .t-ask { animation: rise var(--t-enter) var(--ease-spring) backwards, ask-ring 1s var(--ease-out) 200ms; }
+  .t-asked-status { animation: pop var(--t-enter) var(--ease-spring); }
+  .t-q-option.is-on .mark { animation: settle var(--t-slow) var(--ease-spring); }
+  .cs-banner { animation: rise var(--t-slow) var(--ease-snap); }
+  .cp-error, .pf-error, .pv-refusal, .t-ask-error, .cs-interrupt-error, .lk-error { animation: nudge 360ms var(--ease-out); }
+  /* A question's next page (QuestionCard.tsx shows one and hides the rest) rises in where the last one stood. */
+  .t-q:not([hidden]) { animation: rise var(--t-slow) var(--ease-snap); }
+  .pv-call { animation: step-in var(--t-slow) var(--ease-snap) backwards; }
+  .pv-detail { animation: fade-in var(--t-slow) var(--ease-out); }
+  .desk-note, .t-empty { animation: fade-in 400ms var(--ease-out) 150ms backwards; }
+
+  /* ---------- the project explorer ---------- */
+  /* It opens from its own (left) edge as a docked preview does: its width eases, so the canvas
+     gives way as it comes and takes the room back as it goes. Another zone's folder taking its
+     place only fades in. A folder's rows unfold under it. A file opens in its own panel beside
+     the tree, which docks in the same way (it mounts only when a file opens; another file taking
+     its place only fades in) and leaves with the explorer or on its own. */
+  .explorer { animation: fade-in var(--t-slow) var(--ease-out); }
+  /* fade-in stays first in the list while it opens: a name new to the element starts playing, so
+     without it the whole explorer would fade in a second time the moment .is-explorer-opening goes. */
+  .app.is-explorer-opening .explorer { animation: fade-in var(--t-slow) var(--ease-out), dock-in var(--t-panel) var(--ease-snap) backwards; }
+  .ex-viewer { animation: dock-in var(--t-panel) var(--ease-snap) backwards; }
+  :is(.explorer, .ex-viewer).is-closing { animation: dock-out var(--t-panel-exit) var(--ease-in) forwards; pointer-events: none; }
+  .ex-chev, .git-chev, .jv-toggle svg { transition: rotate var(--t-base) var(--ease-snap); }
+  .ex-pv-body { animation: fade-in var(--t-slow) var(--ease-out); }
+  .ex-json > :is(.jv, .ex-text) { animation: fade-in var(--t-base) var(--ease-out); }
+  .ex-edge::after { transition: background-color 160ms var(--ease-out); }
+  /* Reload's arrow turns once for each press. */
+  .ex-turn { animation: turn var(--t-enter) var(--ease-spring); }
+
+  /* Files and Git: the chosen tab's fill travels to it, and what the tab shows arrives as one
+     movement. Rows that arrive together follow one another, closer than cards do and capped; each
+     took its place (--i) when it was first drawn (explorer/cascade.ts), so the whole list runs
+     from its top when the tab is entered and a folder's or a group's own rows from their heading
+     when it opens. */
+  .ex-seg::before { transition: translate var(--t-slow) var(--ease-snap); }
+  .ex-tree, .git-panel { animation: fade-in var(--t-base) var(--ease-out); }
+  .ex-row, .git-group, .git-file { animation: reveal var(--t-slow) var(--ease-snap) backwards; animation-delay: calc(min(var(--i, 0), 10) * var(--stagger-row)); }
+
+  /* A read that is quick shows only its result. A loading line, and the shapes that stand in for
+     the Git list, stay unseen for --t-wait and then fade in, so only a read slow enough to notice
+     says it is loading; the shapes breathe one after another until the rows take their places.
+     Reduced motion shows the line and the shapes at once, and still. */
+  .is-loading:is(.ex-note, .ex-sub), .git-commit-reason[role="status"], :is(.git-branch, .git-selection) > .git-ghost, .git-ghosts {
+    animation: fade-in var(--t-slow) var(--ease-out) var(--t-wait) backwards; }
+  .git-ghosts > * { animation: breathe 1.6s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 110ms); }
+
+  /* ---------- the explorer's Git tab ---------- */
+  /* The panel's frame (branch, staged row, composer) stands from the first frame, so nothing below
+     the list jumps when the read is back; what the read brings fades in on it. */
+  .git-branch > :is(strong, span), .git-selection > :is(span, button), .git-issue-filter, .git-files > .ex-note, .git-compose > p { animation: fade-in var(--t-slow) var(--ease-out); }
+  .git-selection b { animation: pop var(--t-enter) var(--ease-spring); }
+  .git-selection button, .git-text-action, .git-issue-filter { transition: color var(--t-fast) var(--ease-out), text-decoration-color var(--t-fast) var(--ease-out), opacity var(--t-fast) var(--ease-out); }
+  .git-panel input[type="checkbox"] { transition: scale var(--t-base) var(--ease-spring); }
+  .git-panel input[type="checkbox"]:active:not(:disabled) { scale: 0.86; transition-duration: 60ms; }
+  /* While an action runs every control is off. They dim only if it takes long enough to notice,
+     so staging one file does not blink the whole panel; the button that is working breathes. */
+  .git-panel[aria-busy="true"] :is(.git-action, .git-selection button):disabled { transition-delay: var(--t-wait); }
+  .git-action.is-working { animation: breathe 1.6s ease-in-out infinite; }
+  .git-compose > .git-notice { animation: rise var(--t-slow) var(--ease-snap); }
+  .git-compose > .git-error { animation: nudge 360ms var(--ease-out); }
+  /* A file's diff rises under the list as a banner does, and its lines fade in when they are read.
+     The expanded review is a dialog like the others: it rises in and sinks out (GitDiff.tsx). */
+  .git-diff { animation: rise var(--t-slow) var(--ease-snap); }
+  .git-patches, .git-findings { animation: fade-in var(--t-slow) var(--ease-out); }
+  dialog.git-review[open] { animation: dialog-in 300ms var(--ease-spring); }
+  dialog.git-review.is-closing { animation: dialog-out var(--t-exit) var(--ease-in) forwards; }
+  dialog.git-review::backdrop { animation: fade-in 220ms var(--ease-out); }
+  dialog.git-review.is-closing::backdrop { animation: fade-out var(--t-exit) var(--ease-in) forwards; }
+}
+
+/* ---------- keyframes (individual properties, so they stack with an element's own transform) ---------- */
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes zone-in { from { opacity: 0; scale: 0.965; } }
+@keyframes card-in { from { opacity: 0; scale: 0.94; translate: 0 10px; } }
+@keyframes card-out { to { opacity: 0; scale: 0.94; } }
+@keyframes rise { from { opacity: 0; translate: 0 6px; } }
+@keyframes drop-in { from { opacity: 0; translate: 0 -6px; } }
+@keyframes step-in { from { opacity: 0; translate: -6px 0; } }
+@keyframes reveal { from { opacity: 0; translate: 0 -4px; } }
+@keyframes pop { from { scale: 1.4; } }
+@keyframes wake { from { scale: 0.8; } }
+@keyframes settle { from { scale: 0.94; } }
+@keyframes grow { from { transform: scaleX(0); } }
+@keyframes bubble { from { opacity: 0; scale: 0.88; translate: 0 8px; } }
+@keyframes menu-in { from { opacity: 0; scale: 0.95; translate: 0 -4px; } }
+@keyframes toast-pop { from { opacity: 0; scale: 0.92; translate: 0 16px; } }
+@keyframes dialog-in { from { opacity: 0; scale: 0.955; translate: 0 12px; } }
+@keyframes dialog-out { to { opacity: 0; scale: 0.975; translate: 0 6px; } }
+/* The opened image is never faded: it is there at once, and only grows the last few percent. */
+@keyframes img-pop { from { scale: 0.94; } }
+/* The slide is the panel's column opening (app.css); these are the rest of it. */
+@keyframes panel-in { from { opacity: 0; filter: blur(6px); } }
+@keyframes panel-out { to { opacity: 0; filter: blur(4px); } }
+/* A dock's width from nothing and back (--dock-open); clipped while it is narrower than its content. */
+@keyframes dock-in { from { --dock-open: 0; opacity: 0; overflow: hidden; } to { overflow: hidden; } }
+@keyframes dock-out { from { overflow: hidden; } to { --dock-open: 0; opacity: 0; overflow: hidden; } }
+/* Height from nothing to its own (interpolate-size), clipped only while it grows. */
+@keyframes unfold { from { height: 0; opacity: 0; overflow: hidden; } to { overflow: hidden; } }
+@keyframes turn-in { from { rotate: -180deg; opacity: 0; } }
+@keyframes turn { from { rotate: -1turn; } }
+@keyframes nudge { 0% { translate: -5px 0; } 35% { translate: 4px 0; } 65% { translate: -2px 0; } 100% { translate: 0 0; } }
+@keyframes draw { from { stroke-dashoffset: 12; } to { stroke-dashoffset: 0; } }
+@keyframes halo { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+@keyframes ripple { from { opacity: 0.9; scale: 1; } to { opacity: 0; scale: 1.07 1.1; } }
+@keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes beat { 0%, 55%, 100% { scale: 1; } 25% { scale: 1.5; } }
+/* One-shot, on one element: the only place a shadow is animated. Loops never repaint. */
+@keyframes ask-ring { from { box-shadow: 0 0 0 0 color-mix(in oklch, var(--orb-warning) 50%, transparent); } to { box-shadow: 0 0 0 12px transparent; } }
+
+/* ================================ 3. Quiet ================================ */
+/* Unreachable reader: nothing may look live (see app.css). */
+.app.is-stale .card::before, .app.is-stale .card::after, .app.is-stale .counts .wait i,
+.app.is-stale .agent-orb::after, .app.is-stale .agent-globe::before, .app.is-stale .agent-globe::after,
+.app.is-stale .orb .spark { animation: none; }
+.app.is-stale .cr .cr-still { content: normal; visibility: visible; }
+.app.is-stale .cr :is(.cr-gaze, .cr-question) { display: none; }
+.app.is-stale .card.is-needs::before { opacity: 0.4; }
+.app.is-stale .t-tool .dot.working { animation: none; }
+.app.is-stale .git-ghosts > *, .app.is-stale .git-action.is-working { animation: none; }
+
+/* The floating preview travels at exactly the board camera's position and scale. */
+.pv-canvas { transform: var(--preview-transform); }
+.preview-window .pv-size:focus-visible { outline-offset: -2px; }
+.preview-window .pv-size:hover::after { color: var(--foreground); }
+
+/* ---------- card slots: Tidy and the "Earlier" fold (web/src/canvas/cardSlots.ts) ----------
+   Cards that change slot (a Tidy, a drop, a new card filling a hole) glide there with cardGlide.ts;
+   the fold reveals its cards and rim together. Reduced motion: all at once. */
+@media (prefers-reduced-motion: no-preference) {
+  .zone-tidy, .zone-earlier-toggle, .zone-tidy-action {
+    transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), scale var(--t-base) var(--ease-spring);
+  }
+  :is(.zone-tidy, .zone-earlier-toggle):active { scale: 0.94; transition-duration: 60ms; }
+  .zone {
+    --fold-duration: var(--t-panel-exit);
+    --earlier-trim: calc((1 - var(--earlier-open)) * var(--earlier-height, 0px));
+  }
+  .zone.is-earlier-open { --earlier-open: 1; --fold-duration: var(--t-enter); }
+  /* Only the painted rim and its header follow the measured box. Cards and drop
+     targets use the final layout throughout, even if the motion reverses. */
+  .zone {
+    --rim-duration: var(--t-enter);
+    --rim-timing: var(--ease-zone-size);
+    --hidden-fold: var(--earlier-height, 0px);
+  }
+  .zone.is-earlier-open { --hidden-fold: 0px; }
+  .zone:has(.zone-earlier-cards) {
+    --rim-height-duration: var(--fold-duration);
+    --rim-height-timing: var(--ease-fold);
+  }
+  .zone[data-live-resize], .zone.is-placing, .zone.is-unplaced { --rim-duration: 0ms; --rim-height-duration: 0ms; }
+  .zone::before, .zone::after {
+    --rim-inset: 0px;
+    width: calc(var(--zone-w, 100%) - 2 * var(--rim-inset));
+    height: calc(var(--zone-h, 100%) - var(--hidden-fold) - 2 * var(--rim-inset));
+    transition: width var(--rim-duration) var(--rim-timing), height var(--rim-height-duration, var(--rim-duration)) var(--rim-height-timing, var(--rim-timing)),
+      background-color var(--t-base) var(--ease-out), box-shadow var(--t-base) var(--ease-out);
+  }
+  .zone::before { --rim-inset: 2px; }
+  .zone > .zone-label {
+    width: calc(var(--zone-w, 100%) - 32px);
+    transition: width var(--rim-duration) var(--rim-timing);
+  }
+  .board-departure { position: absolute; pointer-events: none; animation: card-out var(--t-exit) var(--ease-in) forwards; }
+  .board-departure > :is(.zone, .thread-note) { position: relative; translate: none; scale: none; animation: none; pointer-events: none; }
+  .board-departure .zone-label .n { animation: none; }
+  .zone-earlier-toggle svg.i { transition: rotate var(--fold-duration) var(--ease-fold); }
+  .zone-earlier-cards {
+    opacity: var(--earlier-open);
+    clip-path: inset(-32px -48px calc(var(--earlier-trim) - 32px * var(--earlier-open)) -48px);
+  }
+  .zone-earlier-cards:has(.is-dragging) { clip-path: none; }
+  .zone-earlier-cards .card { animation-name: none; }
+}
+
+/* ---------- links between sessions (web/src/links/, docs/links.md) ----------
+   A line whose upstream is working flows toward the card that waits; the × and the port fade in.
+   Reduced motion: the dash stands still and they appear at once. Quiet (stale): no flow. */
+@keyframes link-flow { to { stroke-dashoffset: -20; } }
+@media (prefers-reduced-motion: no-preference) {
+  .link-line.is-working .link-path { animation: link-flow 1.2s linear infinite; }
+  .link-x { transition: opacity var(--t-fast) var(--ease-out) 900ms, visibility 0s linear 1020ms; }
+  .link-line.is-near .link-x, .link-x:hover, .link-x:focus-visible { transition-delay: 0s; }
+  .link-port { transition: background-color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out), scale var(--t-fast) var(--ease-spring); }
+}
+.app.is-stale .link-line.is-working .link-path { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .board-departure { display: none; }
+}

@@ -1,0 +1,94 @@
+/* Editable board notes and their tools. The sheet is shared with open threads in appearance.css. */
+.board-item-free:has(> .board-note:is(.is-lifted, :focus-within)) { z-index: 1; }
+.zone .board-item-tile:has(> .board-note.is-lifted) { z-index: 3; }
+
+.board-note { --fold: 14px; overflow: hidden; outline: none; }
+.board-note:focus-visible { box-shadow: inset 0 0 0 1px var(--selection-edge), 0 0 0 2px color-mix(in oklch, var(--ring) 70%, transparent), var(--card-shadow); }
+.board-note.is-editing { cursor: auto; box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--highlight) 60%, var(--card-border)), 0 0 0 3px color-mix(in oklch, var(--highlight) 18%, transparent), var(--card-shadow); }
+.board-note.is-lifted { box-shadow: inset 0 0 0 1px var(--selection-edge), var(--lift-shadow); }
+.board-note.is-file-over { box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--highlight) 70%, var(--card-border)), 0 0 0 3px color-mix(in oklch, var(--highlight) 22%, transparent), var(--card-shadow); }
+
+.bn-content { flex: none; min-height: 0; box-sizing: border-box; padding: 2px 14px 16px; flex-grow: 1; user-select: text; cursor: text;
+  font: 400 13px/19px var(--font-sans); overflow-wrap: anywhere; }
+.bn-header { flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 3px; padding: 6px 14px 5px 10px; cursor: grab; }
+.bn-title, .bn-title-field { flex: 1 1 38px; min-width: 0; width: 0; padding: 3px 4px; border: 0; border-radius: 4px;
+  font: var(--note-title); color: var(--note-ink); background: transparent; text-align: left; }
+.bn-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: grab; }
+.bn-title-field { background: color-mix(in srgb, var(--note-ink) 8%, transparent); }
+.bn-title-field::placeholder { color: var(--note-muted); }
+.bn-title:focus-visible, .bn-title-field:focus { outline: 2px solid var(--ring); }
+.board-note.is-lifted .bn-header, .board-note.is-lifted .bn-title { cursor: grabbing; }
+.bn-empty { margin: 0; color: var(--note-muted); }
+
+/* The text: paragraphs keep their breaks; a heading, a list or a to-do reads as it would in a chat. */
+.bn-text { display: flex; flex-direction: column; gap: 2px; }
+.bn-text .md-link { color: color-mix(in srgb, var(--highlight) 30%, var(--note-ink)); text-decoration-color: currentColor; }
+.bn-text p { margin: 0; text-wrap: pretty; }
+.bn-gap { height: 8px; }
+.bn-text .bn-h { margin: 0; font-weight: 600; color: var(--note-ink); }
+.bn-text h3.bn-h { font-size: 15px; line-height: 21px; }
+.bn-text h4.bn-h { font-size: 13.5px; line-height: 19px; }
+.bn-text h5.bn-h { font-size: 11px; line-height: 18px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--note-muted); }
+.bn-text * + .bn-h { margin-top: 6px; }
+.bn-text code { padding: 0 4px; border-radius: 4px; font: 400 12px/18px var(--font-mono); background: color-mix(in oklch, var(--note-ink) 8%, transparent); }
+.bn-item, .bn-task { display: flex; align-items: flex-start; gap: 7px; }
+.bn-bullet { flex: none; min-width: 10px; color: var(--note-muted); font-variant-numeric: tabular-nums; }
+.bn-item-text { min-width: 0; }
+.bn-task { cursor: pointer; }
+.bn-task input { flex: none; width: 14px; height: 14px; margin: 2.5px 0 0; accent-color: color-mix(in oklch, var(--note-hue) 80%, var(--note-ink)); cursor: pointer; }
+.bn-task input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.bn-task.is-done .bn-item-text { color: var(--note-muted); text-decoration: line-through; text-decoration-color: color-mix(in oklch, var(--note-muted) 70%, transparent); }
+
+/* Writing in it: the same type as the text it becomes, growing with what is typed. */
+.bn-field { display: block; box-sizing: border-box; width: 100%; min-height: 19px; margin: 0; padding: 0; border: 0; resize: none; overflow: hidden;
+  background: transparent; color: var(--note-ink); font: inherit; outline: none; }
+.bn-field::placeholder { color: var(--note-muted); }
+
+/* Pictures: one fills the width in its own shape; several sit in a grid of squares. */
+.bn-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; margin-top: 10px; }
+.bn-pics:has(> .bn-pic:only-child) { grid-template-columns: 1fr; }
+.bn-pic { position: relative; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; background: var(--surface); }
+.bn-pics:not(:has(> .bn-pic:only-child)) .bn-pic { aspect-ratio: 1 !important; }
+.bn-pic-open { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.bn-pic-open img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.bn-pics:has(> .bn-pic:only-child) .bn-pic-open img { object-fit: contain; }
+.bn-pic-open:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; border-radius: 8px; }
+.bn-pic-remove.bi-tool { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; opacity: 0; pointer-events: none; }
+.bn-pic:is(:hover, :focus-within) .bn-pic-remove { opacity: 1; pointer-events: auto; }
+
+/* Colour, attach, duplicate and delete: over its top corner while it is hovered or focused. */
+.bn-tools { margin-left: auto; display: flex; gap: 3px; opacity: 0; pointer-events: none; }
+.board-note:is(:hover, :focus-within) .bn-tools { opacity: 1; pointer-events: auto; }
+.bn-tools .bi-tool { width: 22px; height: 22px; color: var(--note-ink); background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--note-ink) 35%, transparent); }
+.bn-tools .bi-tool:hover { background: color-mix(in srgb, var(--note-ink) 10%, transparent); }
+.board-note :is(.bn-title, .bn-title-field, .bn-tools button, .md-link, .bn-task input):focus-visible { outline: 2px solid var(--note-focus); }
+.bn-tools .bi-tool:disabled { opacity: 0.45; cursor: default; }
+.bn-dot { display: block; width: 10px; height: 10px; border-radius: 50%; background: var(--note-hue); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--foreground) 18%, transparent); }
+.bn-swatches { position: absolute; top: 36px; right: 7px; z-index: 2; display: flex; flex-wrap: wrap; max-width: calc(100% - 14px); gap: 6px; padding: 6px; border-radius: 9px;
+  background: var(--panel); box-shadow: inset 0 0 0 1px var(--card-border), var(--lift-shadow); }
+.bn-swatch { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; background: var(--note-hue);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--foreground) 18%, transparent); }
+.bn-swatch.is-on { outline: 2px solid var(--foreground); outline-offset: 2px; }
+.bn-swatch:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+.bn-resize { position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; border-radius: 0 0 10px 0; cursor: nwse-resize; opacity: 0;
+  background: linear-gradient(135deg, transparent 52%, var(--note-muted) 52%, var(--note-muted) 60%, transparent 60%, transparent 70%, var(--note-muted) 70%, var(--note-muted) 78%, transparent 78%); }
+.board-note:is(:hover, :focus-within, .is-resizing) .bn-resize { opacity: 1; }
+.board-note.is-resizing, .board-note.is-resizing * { cursor: nwse-resize; }
+
+/* In the hand off the canvas: a small sheet with its title, for a chat's message field to take. */
+.board-item-ghost.note-ghost { width: 160px; height: auto; padding: 8px 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  background: var(--sheet); color: var(--note-ink); font: 500 12px/16px var(--font-sans); }
+
+/* Search: a note it finds stays lit, as a card does. */
+.board.is-searching .board-note:not(.is-hit) { opacity: 0.26; }
+.board-note.is-hit-active { box-shadow: inset 0 0 0 1px var(--selection-edge), 0 0 0 2px color-mix(in oklch, var(--highlight) 55%, transparent), var(--card-shadow); }
+
+/* The board's own menu (right-click on the empty desk), fixed to the window as the card menu is. */
+.menu.desk-menu { position: fixed; top: 0; z-index: 40; min-width: 210px; }
+.desk-menu .menu-item svg.i { flex: none; display: block; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; color: var(--muted); }
+.desk-menu .menu-item:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+
+@media (forced-colors: active) {
+  .board-note:focus-visible { outline: 2px solid Highlight; outline-offset: 1px; }
+}

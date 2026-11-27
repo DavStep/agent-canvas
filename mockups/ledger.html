@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent canvas · Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* paper */
+  --canvas:#d8d1ae;
+  --sheet:#ddd6b5;      /* zone body */
+  --paper:#e6e0c4;      /* cards, bars, panel */
+  --paper-idle:#ebe6d1; /* idle card, lighter */
+  --paper-hi:#efebd9;   /* hover */
+  --inset:#d3cba6;      /* darker paper well */
+  /* ink */
+  --ink:#2a2620;
+  --ink-2:#4d473c;
+  --ink-3:#5f584b;
+  --rule:#7a7362;
+  --rule-soft:#a39c86;
+  --edge-idle:#8f8874;
+  /* attention */
+  --brick:#9e4128;
+  /* zone tones */
+  --olive:#5c5e35;
+  --slate:#4a5558;
+  --umber:#6e4f3a;
+  --ochre:#765915;
+}
+*{box-sizing:border-box}
+html,body{height:100%;overflow:hidden;margin:0}
+body{
+  display:grid;
+  grid-template-rows:40px auto minmax(0,1fr);
+  background:var(--canvas);
+  color:var(--ink);
+  font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  font-size:13px;line-height:20px;font-weight:400;
+  -webkit-font-smoothing:antialiased;
+  font-variant-ligatures:none;
+}
+h1,h2,h3,p,ul,dl,dd{margin:0;padding:0}
+ul{list-style:none}
+button{font-family:inherit}
+.lbl{font-size:11px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:stretch;background:var(--paper);border-bottom:1px solid var(--ink)}
+.brand{display:flex;align-items:center;padding:0 16px;font-size:13px;font-weight:600;border-right:1px solid var(--ink)}
+.counts{display:flex;align-items:center;padding:0 16px;font-size:12px;color:var(--ink-2)}
+.counts .sep{padding:0 8px;color:var(--rule)}
+.counts b{font-weight:600;color:var(--brick)}
+.ctrl{margin-left:auto;display:flex}
+.ctrl span{display:flex;align-items:center;justify-content:center;padding:0 16px;border-left:1px solid var(--ink);font-size:12px;color:var(--ink-2);cursor:default}
+.ctrl span:hover{background:var(--paper-hi);color:var(--ink)}
+.ctrl u{text-decoration-thickness:1px;text-underline-offset:3px}
+.ctrl .zoom{min-width:72px;color:var(--ink)}
+
+/* ---------- needs-you band ---------- */
+.needs{display:grid;grid-template-columns:192px minmax(0,1fr);background:var(--paper);border-bottom:1px solid var(--ink)}
+.needs-head{display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--brick);color:var(--paper);border-right:1px solid var(--ink)}
+.needs-head .n{display:grid;place-items:center;width:28px;height:28px;border:1px solid var(--paper);font-size:15px;line-height:20px;font-weight:600;letter-spacing:0}
+.nrow{display:grid;grid-template-columns:minmax(0,456px) minmax(0,1fr) 64px;column-gap:24px;align-items:center;height:32px;padding:0 16px;cursor:default}
+.nrow + .nrow{border-top:1px dashed var(--rule)}
+.nrow:hover{background:var(--paper-hi)}
+.nt{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nr{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm{font-size:12px;text-align:right;font-weight:600}
+
+/* ---------- workspace ---------- */
+.work{display:grid;grid-template-columns:minmax(0,1fr) 360px;min-height:0}
+.canvas{
+  position:relative;overflow:hidden;
+  background-color:var(--canvas);
+  background-image:
+    linear-gradient(to right, rgba(42,38,32,.085) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(42,38,32,.085) 1px, transparent 1px),
+    linear-gradient(to right, rgba(42,38,32,.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(42,38,32,.035) 1px, transparent 1px);
+  background-size:80px 80px,80px 80px,16px 16px,16px 16px;
+}
+
+/* zones */
+.zone{position:absolute;background:var(--sheet);border:1px solid var(--ink)}
+.zone-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;height:24px;padding:0 12px;background:var(--tone);color:var(--paper);font-size:11px;line-height:16px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.zone-strip b{font-weight:600}
+.zone-strip span{font-weight:500}
+.zone-body{padding:12px}
+
+#z-garden{left:48px;top:32px;width:794px;--tone:var(--olive)}
+#z-dash{left:32px;top:368px;width:534px;--tone:var(--slate)}
+#z-none{left:clamp(608px, calc(100% - 360px), 720px);top:384px;width:290px;--tone:var(--umber)}
+#z-broad{left:clamp(624px, calc(100% - 320px), 760px);top:608px;width:274px;--tone:var(--ochre)}
+@media (min-width:1560px){
+  #z-broad{left:888px;top:32px}
+  #z-none{top:368px}
+}
+
+.grid6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.grid6 .w2{grid-column:span 2}
+.grid6 .w3{grid-column:span 3}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.col{display:flex;flex-direction:column;gap:12px}
+.col .grow{flex:1}
+
+/* cards */
+.card{position:relative;display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--ink);cursor:default}
+.card:hover{background:var(--paper-hi)}
+.card-tag{display:flex;align-items:center;gap:6px;height:28px;padding:0 12px;font-size:11px;line-height:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.card-tag .kind{margin-left:auto;color:var(--brick)}
+.card-main{padding:2px 12px 12px}
+.card-title{font-size:13px;line-height:18px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-act{margin-top:4px;font-size:12px;line-height:16px;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-act em{font-style:normal;color:var(--ink);font-weight:500}
+.card-foot{display:flex;justify-content:space-between;gap:12px;margin:auto 12px 0;padding:6px 0 8px;border-top:1px dashed var(--rule);font-size:12px;line-height:16px;color:var(--ink-2);white-space:nowrap}
+.card-foot .none{color:var(--ink-3)}
+
+/* state: working */
+.cursor{display:inline-block;width:7px;height:13px;background:var(--ink);animation:blink 1.2s steps(1,end) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* state: needs you */
+.card.is-needs{border-color:var(--brick);outline:1px solid var(--brick);outline-offset:-2px}
+.tag-needs{display:inline-block;padding:1px 6px;background:var(--brick);color:var(--paper)}
+.card.is-needs .card-act{color:var(--ink-2)}
+
+/* state: idle */
+.card.is-idle{background:var(--paper-idle);border-color:var(--edge-idle)}
+.card.is-idle .card-tag,
+.card.is-idle .card-title{color:var(--ink-3);font-weight:500}
+.card.is-idle .card-foot{color:var(--ink-3);border-top-color:var(--rule-soft)}
+.card.is-idle:hover{background:var(--paper-hi);border-color:var(--ink)}
+.card.is-idle:hover .card-title{color:var(--ink)}
+
+/* selected */
+.card.is-selected{outline:1px solid var(--ink);outline-offset:2px}
+.card.is-selected .card-tag{background:var(--ink);color:var(--paper)}
+.card.is-selected .cursor{background:var(--paper)}
+.card.is-selected .card-main{padding-top:8px}
+.card.is-selected:hover{background:var(--paper)}
+
+/* subagent tree */
+.tree{margin-top:4px;font-size:12px;line-height:16px}
+.tree li{display:flex;align-items:baseline;white-space:nowrap}
+.tree .br{color:var(--rule);padding-right:6px}
+.tree .sa{color:var(--ink)}
+.tree .st{margin-left:auto;font-size:11px;letter-spacing:.06em;font-weight:600}
+.tree .st.done{color:var(--ink-3);font-weight:500}
+
+/* ---------- side panel ---------- */
+.panel{display:flex;flex-direction:column;min-height:0;background:var(--paper);border-left:1px solid var(--ink)}
+.p-strip{display:flex;align-items:center;justify-content:space-between;height:28px;padding:0 20px;background:var(--ink);color:var(--paper)}
+.p-close{font-size:15px;line-height:20px;font-weight:400;cursor:default}
+.p-body{flex:1;min-height:0;overflow:hidden;padding:20px 20px 0}
+.p-title{margin-bottom:16px;font-size:15px;line-height:22px;font-weight:600}
+.p-form{border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.p-form > div{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:baseline;padding:4px 0}
+.p-form > div + div{border-top:1px dashed var(--rule)}
+.p-form dt{font-size:11px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.p-form dd{display:flex;align-items:center;gap:8px}
+.p-form .cursor{width:8px;height:15px}
+.p-sec h3{display:flex;align-items:center;gap:8px;margin:24px 0 8px;font-size:11px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.p-sec h3::after{content:"";flex:1;border-top:1px dashed var(--rule)}
+.inset{padding:8px 12px;background:var(--inset);border:1px solid var(--ink)}
+.p-sec p + p{margin-top:12px}
+.p-actions{display:grid;gap:8px;padding:16px 20px 20px;border-top:1px solid var(--ink)}
+.btn{height:36px;padding:0 16px;border:1px solid var(--ink);border-radius:0;background:transparent;color:var(--ink);font-size:13px;line-height:20px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--inset)}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.primary:hover{background:#3b362d}
+.btn:focus-visible{outline:1px solid var(--ink);outline-offset:2px}
+
+@media (prefers-reduced-motion:reduce){
+  .cursor{animation:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">Agent canvas</div>
+  <div class="counts">11 sessions<span class="sep">·</span>3 working<span class="sep">·</span><b>2 need you</b></div>
+  <nav class="ctrl" aria-label="View">
+    <span><u>Z</u>ones</span>
+    <span><u>F</u>it</span>
+    <span class="zoom">100%</span>
+  </nav>
+</header>
+
+<section class="needs" aria-label="Needs you">
+  <div class="needs-head lbl"><span>Needs you</span><span class="n">2</span></div>
+  <div class="needs-rows">
+    <div class="nrow">
+      <span class="nt">Enable account deletion approvals on Hostly</span>
+      <span class="nr">asks permission to run a command</span>
+      <span class="nm">2m</span>
+    </div>
+    <div class="nrow">
+      <span class="nt">Purchases unavailable in production</span>
+      <span class="nr">finished, waiting for your reply</span>
+      <span class="nm">14m</span>
+    </div>
+  </div>
+</section>
+
+<main class="work">
+  <div class="canvas">
+
+    <!-- garden-sim -->
+    <section class="zone" id="z-garden">
+      <div class="zone-strip"><b>garden-sim</b><span>5 sessions · 1 working · 2 need you</span></div>
+      <div class="zone-body grid6">
+        <article class="card is-working w2">
+          <div class="card-tag"><span>[Working]</span><span class="cursor"></span></div>
+          <div class="card-main">
+            <h3 class="card-title">Reconnection dialog and animation issues</h3>
+            <p class="card-act">Editing ReconnectDialog.tsx</p>
+          </div>
+          <footer class="card-foot"><span>fix/reconnect</span><span>6m in this turn</span></footer>
+        </article>
+
+        <article class="card is-needs w2">
+          <div class="card-tag"><span class="tag-needs">[Needs you]</span><span class="kind">Permission</span></div>
+          <div class="card-main">
+            <h3 class="card-title">Enable account deletion approvals on Hostly</h3>
+            <p class="card-act">Wants to run: <em>ssh hostly systemctl restart api</em></p>
+          </div>
+          <footer class="card-foot"><span>main</span><span>2m</span></footer>
+        </article>
+
+        <article class="card is-needs w2">
+          <div class="card-tag"><span class="tag-needs">[Needs you]</span><span class="kind">Reply</span></div>
+          <div class="card-main">
+            <h3 class="card-title">Purchases unavailable in production</h3>
+            <p class="card-act">Found it: product IDs differ between sandbox and production</p>
+          </div>
+          <footer class="card-foot"><span>main</span><span>14m</span></footer>
+        </article>
+
+        <article class="card is-idle w3">
+          <div class="card-tag"><span>[Idle]</span></div>
+          <div class="card-main"><h3 class="card-title">Preview improvement suggestions</h3></div>
+          <footer class="card-foot"><span>main</span><span>last active 3h ago</span></footer>
+        </article>
+
+        <article class="card is-idle w3">
+          <div class="card-tag"><span>[Idle]</span></div>
+          <div class="card-main"><h3 class="card-title">Codex usage credits analysis</h3></div>
+          <footer class="card-foot"><span>main</span><span>last active yesterday</span></footer>
+        </article>
+      </div>
+    </section>
+
+    <!-- garden-dashboard -->
+    <section class="zone" id="z-dash">
+      <div class="zone-strip"><b>garden-dashboard</b><span>4 sessions · 1 working</span></div>
+      <div class="zone-body cols">
+        <div class="col">
+          <article class="card is-working">
+            <div class="card-tag"><span>[Working]</span><span class="cursor"></span></div>
+            <div class="card-main">
+              <h3 class="card-title">Database visualization dashboard</h3>
+              <p class="card-act">Running tests</p>
+              <ul class="tree" aria-label="Subagents">
+                <li><span class="br">├─</span><span class="sa">schema-explorer</span><span class="st">[WORKING]</span></li>
+                <li><span class="br">└─</span><span class="sa">chart-builder</span><span class="st done">[DONE]</span></li>
+              </ul>
+            </div>
+            <footer class="card-foot"><span>feat/db-viz</span><span>11m in this turn</span></footer>
+          </article>
+          <article class="card is-idle">
+            <div class="card-tag"><span>[Idle]</span></div>
+            <div class="card-main"><h3 class="card-title">Dashboard as MCP</h3></div>
+            <footer class="card-foot"><span>main</span><span>last active 1h ago</span></footer>
+          </article>
+        </div>
+        <div class="col">
+          <article class="card is-idle">
+            <div class="card-tag"><span>[Idle]</span></div>
+            <div class="card-main"><h3 class="card-title">Agent setup 3D graph visualization</h3></div>
+            <footer class="card-foot"><span>main</span><span>last active 5h ago</span></footer>
+          </article>
+          <article class="card is-idle grow">
+            <div class="card-tag"><span>[Idle]</span></div>
+            <div class="card-main"><h3 class="card-title">trying to analyze the progression shown</h3></div>
+            <footer class="card-foot"><span>main</span><span>last active 2d ago</span></footer>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- No folder -->
+    <section class="zone" id="z-none">
+      <div class="zone-strip"><b>No folder</b><span>1 session · 1 working</span></div>
+      <div class="zone-body">
+        <article class="card is-working is-selected" aria-current="true">
+          <div class="card-tag"><span>[Working]</span><span class="cursor"></span></div>
+          <div class="card-main">
+            <h3 class="card-title">System discussion with friend notes</h3>
+            <p class="card-act">Laying out visual directions</p>
+          </div>
+          <footer class="card-foot"><span class="none">—</span><span>1m in this turn</span></footer>
+        </article>
+      </div>
+    </section>
+
+    <!-- sailcloth-io -->
+    <section class="zone" id="z-broad">
+      <div class="zone-strip"><b>sailcloth-io</b><span>1 session</span></div>
+      <div class="zone-body">
+        <article class="card is-idle">
+          <div class="card-tag"><span>[Idle]</span></div>
+          <div class="card-main"><h3 class="card-title">Deploy changes</h3></div>
+          <footer class="card-foot"><span>main</span><span>last active 40m ago</span></footer>
+        </article>
+      </div>
+    </section>
+
+  </div>
+
+  <aside class="panel" aria-label="Selected session">
+    <div class="p-strip lbl"><span>Selected</span><span class="p-close" aria-label="Close">×</span></div>
+    <div class="p-body">
+      <h2 class="p-title">System discussion with friend notes</h2>
+      <dl class="p-form">
+        <div><dt>Folder</dt><dd>No folder</dd></div>
+        <div><dt>Model</dt><dd>Fable 5.2</dd></div>
+        <div><dt>Started</dt><dd>17:42</dd></div>
+        <div><dt>State</dt><dd><span>Working, 1m</span><span class="cursor"></span></dd></div>
+      </dl>
+      <section class="p-sec">
+        <h3>You last said</h3>
+        <div class="inset">Standalone canvas</div>
+      </section>
+      <section class="p-sec">
+        <h3>Its last answer</h3>
+        <p>The check is back, and it narrows the choice to two real options.</p>
+        <p>I recommend the standalone canvas because all 11 of your live sessions are desktop-app sessions; the other route makes you change how you work before you get any value.</p>
+      </section>
+    </div>
+    <div class="p-actions">
+      <button class="btn primary" type="button">Open in Claude</button>
+      <button class="btn" type="button">Copy resume command</button>
+    </div>
+  </aside>
+</main>
+
+</body>
+</html>

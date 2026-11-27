@@ -1,0 +1,109 @@
+/* Neutral canvas surfaces, with color reserved for project markers, providers and session states. */
+:root {
+  --sidebar: #141414; --background: #181818; --panel: #282828; --surface: #1e1e1e;
+  --control: transparent; --control-border: #646464; --border: #353535; --card-border: #3b3b3b;
+  --accent: #373737; --row-hover: #2b2b2b; --chip: #494949; --chip-ink: #f2f2f2;
+  --foreground: #f1f1f1; --nav-ink: #dddddd; --muted: #acacac;
+  --highlight: oklch(0.78 0.13 305);
+  --chart-1: #9964e5; --chart-2: #20a89b; --chart-3: #d97230; --chart-4: #ca4b85; --chart-5: #398ad6; --chart-6: #57a943;
+  --chart-quiet: #777777;
+  --pill-info: oklch(0.80 0.09 305); --pill-info-ink: oklch(0.33 0.13 305);
+  --pill-positive: oklch(0.83 0.11 162); --pill-positive-ink: oklch(0.32 0.07 162);
+  --pill-warning: oklch(0.89 0.12 95); --pill-warning-ink: oklch(0.36 0.07 85);
+  --pill-negative: oklch(0.83 0.085 18); --pill-negative-ink: oklch(0.38 0.13 25);
+  --live: oklch(0.77 0.16 162);
+  --radius-card: 14px; --radius-control: 8px;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  --card-shadow: inset 0 1px 0 oklch(1 0 0 / 4%), 0 18px 40px -24px oklch(0 0 0 / 70%);
+  --lift-shadow: inset 0 1px 0 oklch(1 0 0 / 6%), 0 28px 60px -28px oklch(0 0 0 / 85%);
+  --ring: var(--highlight);
+  --orb-ink: var(--foreground); --orb-accent: var(--highlight); --orb-warning: oklch(0.80 0.16 75);
+  /* Canvas-only tokens, all derived so a light theme only has to restate the base set. */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ease-out: cubic-bezier(.22, .7, .25, 1);
+  /* Motion tokens (docs/motion.md). Snap: quick start, long soft landing, for things that travel.
+     Spring: lands a touch past its mark, for things that arrive or answer a press. In: for leaving. */
+  --ease-snap: cubic-bezier(.16, 1, .3, 1);
+  --ease-spring: cubic-bezier(.34, 1.45, .64, 1);
+  --ease-in: cubic-bezier(.4, 0, 1, 1);
+  --ease-zone-size: cubic-bezier(.27, .88, .42, 1.12);
+  --ease-fold: cubic-bezier(.32, .08, .24, 1);
+  --t-globe-turn: 35s; --t-globe-working: 8s;
+  --t-fast: 120ms; --t-base: 180ms; --t-slow: 280ms; --t-enter: 340ms; --t-exit: 140ms;
+  /* A side panel travels its own width: 320 ms in, 200 ms out (PANEL_EXIT_MS in useLingering.ts). */
+  --t-panel: 320ms; --t-panel-exit: 200ms;
+  --stagger: 34ms;
+  /* Rows in a list (the explorer's tree, the Git changes) follow one another closer than cards do. */
+  --stagger-row: 16ms;
+  /* How long a read may take before the page says it is loading: a loading line or a placeholder
+     stays unseen until then, so a quick read shows only its result. */
+  --t-wait: 160ms;
+  --t-note-reflection: 2.5s;
+  --gaze-dwell: 1.6s;
+  --grid-dot: color-mix(in oklch, var(--foreground) 8%, transparent);
+  --zone-glow-strength: 6%;
+  --zone-edge-glow-strength: 12%;
+  --selection-edge: color-mix(in srgb, var(--highlight) 85%, var(--panel));
+  --ink-soft: color-mix(in oklch, var(--foreground) 86%, var(--background));
+  --ink-idle: color-mix(in oklch, var(--foreground) 74%, var(--background));
+  --needs-edge: color-mix(in oklch, var(--orb-warning) 72%, transparent);
+  --needs-fill: var(--panel);
+  --needs-glow: color-mix(in srgb, var(--orb-warning) 15%, transparent);
+  --idle-fill: color-mix(in oklch, var(--panel) 45%, var(--surface));
+  --needs-ink: var(--orb-warning);
+  /* Done: finished and not opened yet. Green, and quieter than amber: news, not a request. */
+  --done-edge: color-mix(in oklch, var(--live) 45%, transparent);
+  --done-fill: var(--panel);
+  --done-ink: var(--live);
+  /* Interrupted: cut off by a limit, an error or its process ending. A calm red: a hairline and a
+     "!" dot, never a glow or a ring. */
+  --interrupt-ink: oklch(0.72 0.15 25);
+  --interrupt-edge: color-mix(in oklch, var(--interrupt-ink) 62%, transparent);
+  --interrupt-fill: color-mix(in oklch, var(--interrupt-ink) 5%, var(--panel));
+  /* Ready to continue: a limit that cut a turn off has reset. A calm green hairline, quieter than
+     Done: nothing went wrong now, the session only waits for Continue. */
+  --ready-ink: var(--live);
+  --ready-edge: color-mix(in oklch, var(--live) 32%, transparent);
+  --ready-fill: color-mix(in oklch, var(--live) 4%, var(--panel));
+  /* Uncoated paper and printed ink for board notes and open threads. */
+  --paper-stock: #e3d8bf; --paper-ink: #332e25; --paper-pencil: #605547;
+  /* Sprite inks */
+  --cr-claude: #d97757; --cr-claude-quiet: oklch(0.52 0.07 42);
+  --cr-codex: #3f7bff; --cr-codex-quiet: oklch(0.47 0.1 262);
+  --cr-idle: oklch(0.5 0 0);
+  --eye: oklch(0.17 0 0); --acc: oklch(0.93 0 0); --acc-2: oklch(0.63 0 0); --cheek: var(--pill-negative);
+}
+
+/* How far open a side is, 0 to 1: the chat panel's grid track (app.css) and a docked preview's
+   width (chat.css) are multiplied by it, so the canvas narrows and widens as they come and go.
+   Registered as numbers so they can be eased (motion.css); neither inherits. */
+@property --panel-open { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --dock-open { syntax: '<number>'; inherits: false; initial-value: 1; }
+
+/* Base */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; overflow: hidden; }
+body {
+  background: var(--sidebar); color: var(--foreground);
+  font: 400 13px/18px var(--font-sans); font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased; color-scheme: dark;
+}
+.mono { font-family: var(--font-mono); }
+::selection { background: color-mix(in oklch, var(--highlight) 34%, transparent); }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+button { font: inherit; color: inherit; cursor: default; }
+a { color: inherit; text-decoration: none; }
+
+/* Scrollbars: a slim rounded thumb on a clear track, faint at rest and brighter on hover.
+   (Setting scrollbar-width or scrollbar-color anywhere turns these off in Chromium, so don't.) */
+::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { min-height: 32px; border: 3px solid transparent; border-radius: 999px; background-clip: padding-box;
+  background-color: color-mix(in oklch, var(--foreground) 10%, transparent); }
+:hover::-webkit-scrollbar-thumb { background-color: color-mix(in oklch, var(--foreground) 18%, transparent); }
+::-webkit-scrollbar-thumb:hover { border-width: 2px; background-color: color-mix(in oklch, var(--foreground) 30%, transparent); }
+::-webkit-scrollbar-thumb:active { border-width: 2px; background-color: color-mix(in oklch, var(--foreground) 40%, transparent); }
+::-webkit-scrollbar-button { display: none; }
+
+/* Fraction of the Earlier fold currently visible. */
+@property --earlier-open { syntax: "<number>"; inherits: true; initial-value: 0; }

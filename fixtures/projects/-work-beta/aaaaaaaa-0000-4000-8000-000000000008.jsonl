@@ -1,0 +1,6 @@
+{"type":"user","isSidechain":false,"gitBranch":"main","message":{"role":"user","content":"Explain the invented module."}}
+{"type":"assistant","isSidechain":false,"gitBranch":"main","message":{"id":"msg_old","role":"assistant","model":"claude-invented-1","content":[{"type":"text","text":"Earlier invented answer."}]}}
+{"type":"user","isSidechain":false,"gitBranch":"main","message":{"role":"user","content":"Go on."}}
+{"type":"assistant","isSidechain":false,"gitBranch":"main","message":{"id":"msg_split","role":"assistant","model":"claude-invented-1","content":[{"type":"thinking","thinking":"Invented."}]}}
+{"type":"assistant","isSidechain":false,"gitBranch":"main","message":{"id":"msg_split","role":"assistant","model":"claude-invented-1","content":[{"type":"text","text":"Invented part one."}]}}
+{"type":"assistant","isSidechain":false,"gitBranch":"main","message":{"id":"msg_split","role":"assistant","model":"claude-invented-1","content":[{"type":"text","text":"Invented part two."}]}}

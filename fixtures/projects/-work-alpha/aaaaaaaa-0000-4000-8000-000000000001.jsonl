@@ -1,0 +1,11 @@
+{"type":"last-prompt","lastPrompt":"An older invented prompt","sessionId":"aaaaaaaa-0000-4000-8000-000000000001"}
+{"type":"user","isSidechain":false,"gitBranch":"main","sessionId":"aaaaaaaa-0000-4000-8000-000000000001","message":{"role":"user","content":"Please tidy the invented parser module."}}
+{"type":"last-prompt","lastPrompt":"Please tidy the invented parser module.","sessionId":"aaaaaaaa-0000-4000-8000-000000000001"}
+{"type":"custom-title","customTitle":"Invented title","sessionId":"aaaaaaaa-0000-4000-8000-000000000001"}
+{"type":"assistant","isSidechain":false,"gitBranch":"main","message":{"role":"assistant","model":"claude-invented-1","content":[{"type":"thinking","thinking":"Invented thought."}],"stop_reason":"end_turn"}}
+{"type":"assistant","message":{ this line is not json
+{"type":"assistant","isSidechain":false,"gitBranch":"feature/tidy","message":{"role":"assistant","model":"claude-invented-1","content":[{"type":"text","text":"First invented paragraph."},{"type":"text","text":"Second invented paragraph."}],"stop_reason":"end_turn"}}
+{"type":"assistant","isSidechain":false,"gitBranch":"feature/tidy","message":{"role":"assistant","model":"claude-invented-2","content":[{"type":"tool_use","id":"toolu_read1","name":"Read","input":{"file_path":"/work/alpha/parser.ts"}}],"stop_reason":"tool_use"}}
+{"type":"user","isSidechain":false,"gitBranch":"feature/tidy","sessionId":"aaaaaaaa-0000-4000-8000-000000000001","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_read1","content":"invented file body"}]}}
+{"type":"attachment","isSidechain":false,"attachment":{"type":"invented"}}
+{"type":"assistant","isSidechain":false,"gitBranch":"feature/tidy","message":{"role":"assistant","model":"claude-invented-2","content":[{"type":"thinking","thinking":"Invented closing thought."}],"stop_reason":"end_turn"}}
